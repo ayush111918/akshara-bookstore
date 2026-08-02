@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   formatPrice,
   getAuthors,
@@ -9,12 +9,53 @@ import {
   getPrimaryEdition,
   getTitleMonogram,
 } from '../utils/bookPresentation'
+import useAuth from '../hooks/useAuth'
+import useReaderData from '../hooks/useReaderData'
+import { getApiErrorMessage } from '../services/api'
 
 function BookCard({ book }) {
-  const [saved, setSaved] = useState(false)
+  const { user } = useAuth()
+  const { wishlistBookIds, toggleWishlist, addCartItem } = useReaderData()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
   const edition = getPrimaryEdition(book)
   const availability = getAvailability(book)
   const category = book.categories?.[0]?.name
+  const saved = wishlistBookIds.has(book.id)
+
+  function requireReader() {
+    if (user) return true
+    navigate('/login', { state: { from: location } })
+    return false
+  }
+
+  async function handleWishlist() {
+    if (!requireReader()) return
+    setBusy(true)
+    try {
+      await toggleWishlist(book)
+      setMessage(saved ? 'Removed from wishlist' : 'Saved to wishlist')
+    } catch (error) {
+      setMessage(getApiErrorMessage(error, 'Wishlist could not be updated.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleCart() {
+    if (!requireReader() || !edition?.id) return
+    setBusy(true)
+    try {
+      await addCartItem(edition.id)
+      setMessage('Added to cart')
+    } catch (error) {
+      setMessage(getApiErrorMessage(error, 'Book could not be added to cart.'))
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <article className="book-card">
@@ -36,7 +77,8 @@ function BookCard({ book }) {
           type="button"
           aria-label={saved ? `Remove ${book.title} from wishlist` : `Save ${book.title} to wishlist`}
           aria-pressed={saved}
-          onClick={() => setSaved((current) => !current)}
+          disabled={busy}
+          onClick={handleWishlist}
         >
           <i className={`bi ${saved ? 'bi-heart-fill' : 'bi-heart'}`} />
         </button>
@@ -66,10 +108,12 @@ function BookCard({ book }) {
 
         <div className="book-card-footer">
           <strong className="book-card-price">{formatPrice(getBookPrice(book))}</strong>
-          <Link className="book-card-arrow" to={`/books/${book.id}`} aria-label={`View details for ${book.title}`}>
-            <i className="bi bi-arrow-up-right" />
-          </Link>
+          <div className="book-card-actions">
+            <button className="book-card-arrow" disabled={busy || availability.tone !== 'available'} onClick={handleCart} aria-label={`Add ${book.title} to cart`}><i className="bi bi-bag-plus" /></button>
+            <Link className="book-card-arrow" to={`/books/${book.id}`} aria-label={`View details for ${book.title}`}><i className="bi bi-arrow-up-right" /></Link>
+          </div>
         </div>
+        {message && <span className="book-card-message" role="status">{message}</span>}
       </div>
     </article>
   )

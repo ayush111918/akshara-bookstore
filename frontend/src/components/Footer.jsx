@@ -17,14 +17,14 @@ function Footer() {
             <p className="footer-heading">Explore</p>
             <a href="/#catalogue">Book catalogue</a>
             <a href="/#journey">Reading journey</a>
-            <a href="/#community">Community</a>
+            <Link to="/community">Community</Link>
           </div>
 
           <div>
             <p className="footer-heading">For readers</p>
-            <span>Wishlist</span>
-            <span>Personal library</span>
-            <span>Curated collections</span>
+            <Link to="/wishlist">Wishlist</Link>
+            <Link to="/orders">Order history</Link>
+            <Link to="/community">Reader reviews</Link>
           </div>
 
           <div className="footer-note">

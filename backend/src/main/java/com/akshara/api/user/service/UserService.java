@@ -18,6 +18,11 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserResponse getCurrentUser(String subject) {
+        return UserResponse.from(getCurrentUserEntity(subject));
+    }
+
+    @Transactional(readOnly = true)
+    public AppUser getCurrentUserEntity(String subject) {
         Long userId;
 
         try {
@@ -26,10 +31,8 @@ public class UserService {
             throw new InvalidAccessTokenException();
         }
 
-        AppUser user = userRepository.findById(userId)
+        return userRepository.findById(userId)
                 .filter(AppUser::isEnabled)
                 .orElseThrow(InvalidAccessTokenException::new);
-
-        return UserResponse.from(user);
     }
 }

@@ -59,6 +59,8 @@ public class SecurityConfig {
                         .hasRole("ADMIN")
                         .requestMatchers(
                                 "/api/cart/**",
+                                "/api/wishlist/**",
+                                "/api/reviews/**",
                                 "/api/checkout",
                                 "/api/checkout/**",
                                 "/api/orders",

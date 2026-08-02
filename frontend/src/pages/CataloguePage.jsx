@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import BookCard from '../components/BookCard'
 import { getBooks } from '../services/bookService'
+import { getRecentReviews } from '../services/readerService'
 
 const categories = [
   { name: 'Fiction', icon: 'bi-stars' },
@@ -19,30 +21,6 @@ const journeySteps = [
   { number: '05', title: 'Purchase', text: 'Choose an edition and complete the journey in one place.' },
 ]
 
-const communityStories = [
-  {
-    initials: 'AR',
-    name: 'Aarav R.',
-    label: 'Reading list',
-    title: 'Books that make technology feel human',
-    detail: '8 books · 124 readers saved this list',
-  },
-  {
-    initials: 'MS',
-    name: 'Meera S.',
-    label: 'Discussion',
-    title: 'What makes a classic remain relevant?',
-    detail: '36 perspectives · Active today',
-  },
-  {
-    initials: 'KV',
-    name: 'Kabir V.',
-    label: 'Reader review',
-    title: 'A thoughtful, slow read worth returning to',
-    detail: '5 min read · 48 helpful votes',
-  },
-]
-
 function CataloguePage() {
   const [books, setBooks] = useState([])
   const [search, setSearch] = useState('')
@@ -51,6 +29,7 @@ function CataloguePage() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [recentReviews, setRecentReviews] = useState([])
 
   async function loadBooks(query = '', nextSort = 'TITLE_ASC') {
     try {
@@ -94,6 +73,12 @@ function CataloguePage() {
     return () => {
       active = false
     }
+  }, [])
+
+  useEffect(() => {
+    getRecentReviews(3).then(setRecentReviews).catch((requestError) => {
+      console.error('Unable to load community preview', requestError)
+    })
   }, [])
 
   function handleSubmit(event) {
@@ -313,22 +298,30 @@ function CataloguePage() {
               <h2 id="community-heading">Books become richer in conversation.</h2>
               <p>Discover the lists, reviews, and discussions taking shape across the Akshara community.</p>
             </div>
-            <button className="btn btn-ink" type="button">Visit the community <i className="bi bi-arrow-right" /></button>
+            <Link className="btn btn-ink" to="/community">Visit the community <i className="bi bi-arrow-right" /></Link>
           </div>
 
           <div className="community-grid">
-            {communityStories.map((story) => (
-              <article className="community-card" key={story.title}>
+            {recentReviews.map((review) => (
+              <article className="community-card" key={review.id}>
                 <div className="community-card-top">
-                  <span className="reader-avatar">{story.initials}</span>
-                  <div><strong>{story.name}</strong><small>{story.label}</small></div>
+                  <span className="reader-avatar">{review.readerName.split(/\s+/).map((part) => part[0]).slice(0, 2).join('')}</span>
+                  <div><strong>{review.readerName}</strong><small>{review.rating}/5 reader review</small></div>
                   <i className="bi bi-bookmark" />
                 </div>
-                <h3>{story.title}</h3>
-                <p>{story.detail}</p>
-                <button type="button" aria-label={`Open ${story.title}`}><i className="bi bi-arrow-up-right" /></button>
+                <h3>{review.headline || `Thoughts on ${review.bookTitle}`}</h3>
+                <p>{review.content}</p>
+                <Link to={`/books/${review.bookId}#reviews`} aria-label={`Read review of ${review.bookTitle}`}><i className="bi bi-arrow-up-right" /></Link>
               </article>
             ))}
+            {!recentReviews.length && (
+              <article className="community-card community-empty-card">
+                <div className="community-card-top"><span className="reader-avatar">अ</span><div><strong>The reading room</strong><small>Ready for its first voice</small></div></div>
+                <h3>Be the first reader to begin a conversation.</h3>
+                <p>Open any book, add a rating and share what stayed with you.</p>
+                <Link to="/community" aria-label="Visit the community"><i className="bi bi-arrow-up-right" /></Link>
+              </article>
+            )}
           </div>
         </div>
       </section>

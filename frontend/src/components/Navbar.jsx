@@ -1,7 +1,18 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import logo from '../assets/akshara-logo.png'
+import useAuth from '../hooks/useAuth'
+import useReaderData from '../hooks/useReaderData'
 
 function Navbar() {
+  const { user, logout } = useAuth()
+  const { wishlist, cart } = useReaderData()
+  const navigate = useNavigate()
+
+  function signOut() {
+    logout()
+    navigate('/')
+  }
+
   return (
     <nav className="navbar navbar-expand-lg akshara-navbar sticky-top">
       <div className="container-xl">
@@ -43,25 +54,30 @@ function Navbar() {
             </li>
 
             <li className="nav-item">
-              <a className="nav-link" href="/#community">Community</a>
+              <Link className="nav-link" to="/community">Community</Link>
             </li>
 
             <li className="nav-item">
-              <button className="nav-icon-button" type="button" aria-label="Open wishlist" title="Wishlist preview">
+              <Link className="nav-icon-button nav-count-link" to="/wishlist" aria-label="Open wishlist">
                 <i className="bi bi-heart" />
-              </button>
+                {wishlist.length > 0 && <span>{wishlist.length}</span>}
+              </Link>
             </li>
 
             <li className="nav-item">
-              <button className="nav-icon-button" type="button" aria-label="Open cart" title="Cart preview">
+              <Link className="nav-icon-button nav-count-link" to="/cart" aria-label="Open cart">
                 <i className="bi bi-bag" />
-              </button>
+                {cart?.totalQuantity > 0 && <span>{cart.totalQuantity}</span>}
+              </Link>
             </li>
 
             <li className="nav-item ms-lg-1">
-              <button className="btn btn-ink nav-join-button" type="button">
-                Join Akshara
-              </button>
+              {user ? (
+                <div className="nav-reader-menu">
+                  <Link to="/orders"><i className="bi bi-person-circle" /> {user.fullName.split(' ')[0]}</Link>
+                  <button type="button" onClick={signOut}>Sign out</button>
+                </div>
+              ) : <Link className="btn btn-ink nav-join-button" to="/register">Join Akshara</Link>}
             </li>
           </ul>
         </div>

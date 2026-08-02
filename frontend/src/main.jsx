@@ -8,11 +8,17 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
 import App from './App'
 import './index.css'
+import AuthProvider from './providers/AuthProvider'
+import ReaderDataProvider from './providers/ReaderDataProvider'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <ReaderDataProvider>
+          <App />
+        </ReaderDataProvider>
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
 )

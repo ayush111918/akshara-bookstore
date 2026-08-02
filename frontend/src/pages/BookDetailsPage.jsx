@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getBookById } from '../services/bookService'
 import {
   formatPrice,
@@ -10,14 +10,23 @@ import {
   getPrimaryEdition,
   getTitleMonogram,
 } from '../utils/bookPresentation'
+import useAuth from '../hooks/useAuth'
+import useReaderData from '../hooks/useReaderData'
+import { getApiErrorMessage } from '../services/api'
+import ReviewSection from '../components/ReviewSection'
 
 function BookDetailsPage() {
   const { bookId } = useParams()
   const [book, setBook] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [saved, setSaved] = useState(false)
-  const [added, setAdded] = useState(false)
+  const { user } = useAuth()
+  const { wishlistBookIds, toggleWishlist, addCartItem } = useReaderData()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [selectedEditionId, setSelectedEditionId] = useState(null)
+  const [actionBusy, setActionBusy] = useState(false)
+  const [actionMessage, setActionMessage] = useState('')
 
   useEffect(() => {
     let active = true
@@ -27,7 +36,10 @@ function BookDetailsPage() {
         setLoading(true)
         setError('')
         const data = await getBookById(bookId)
-        if (active) setBook(data)
+        if (active) {
+          setBook(data)
+          setSelectedEditionId(getPrimaryEdition(data)?.id ?? null)
+        }
       } catch (requestError) {
         console.error(requestError)
         if (active) setError('This book could not be loaded. It may have been removed or the backend may be unavailable.')
@@ -75,7 +87,46 @@ function BookDetailsPage() {
   }
 
   const primaryEdition = getPrimaryEdition(book)
+  const selectedEdition = book.editions?.find((edition) => edition.id === selectedEditionId) ?? primaryEdition
   const availability = getAvailability(book)
+  const selectedAvailable = Boolean(
+    selectedEdition?.inventory?.active
+      && selectedEdition.inventory.stockQuantity > 0
+      && selectedEdition.inventory.availabilityStatus === 'IN_STOCK',
+  )
+  const saved = wishlistBookIds.has(book.id)
+
+  function requireReader() {
+    if (user) return true
+    navigate('/login', { state: { from: location } })
+    return false
+  }
+
+  async function handleWishlist() {
+    if (!requireReader()) return
+    setActionBusy(true)
+    try {
+      await toggleWishlist(book)
+      setActionMessage(saved ? 'Removed from your wishlist.' : 'Saved to your wishlist.')
+    } catch (requestError) {
+      setActionMessage(getApiErrorMessage(requestError, 'Wishlist could not be updated.'))
+    } finally {
+      setActionBusy(false)
+    }
+  }
+
+  async function handleCart() {
+    if (!requireReader() || !selectedEdition?.id) return
+    setActionBusy(true)
+    try {
+      await addCartItem(selectedEdition.id)
+      setActionMessage('Added to your cart.')
+    } catch (requestError) {
+      setActionMessage(getApiErrorMessage(requestError, 'This edition could not be added to your cart.'))
+    } finally {
+      setActionBusy(false)
+    }
+  }
 
   return (
     <section className="detail-page">
@@ -117,35 +168,37 @@ function BookDetailsPage() {
 
             <div className="detail-rating-row">
               <span className="stars">★★★★★</span>
-              <strong>New arrival</strong>
-              <span>Be the first to review</span>
+              <strong>Reader community</strong>
+              <a href="#reviews">See reviews</a>
             </div>
 
             <div className="detail-price-row">
-              <strong>{formatPrice(getBookPrice(book))}</strong>
+              <strong>{formatPrice(selectedEdition?.inventory?.price ?? getBookPrice(book))}</strong>
               <span>Inclusive of applicable taxes</span>
             </div>
 
             <div className="detail-actions">
               <button
-                className={`btn btn-ink detail-cart-button${added ? ' is-added' : ''}`}
+                className="btn btn-ink detail-cart-button"
                 type="button"
-                disabled={availability.tone !== 'available'}
-                onClick={() => setAdded((current) => !current)}
+                disabled={actionBusy || !selectedAvailable}
+                onClick={handleCart}
               >
-                <i className={`bi ${added ? 'bi-check2' : 'bi-bag-plus'}`} />
-                {added ? 'Added to cart' : 'Add to cart'}
+                <i className="bi bi-bag-plus" />
+                {actionBusy ? 'Please wait…' : 'Add to cart'}
               </button>
               <button
                 className={`detail-save-button${saved ? ' is-saved' : ''}`}
                 type="button"
                 aria-pressed={saved}
-                onClick={() => setSaved((current) => !current)}
+                disabled={actionBusy}
+                onClick={handleWishlist}
               >
                 <i className={`bi ${saved ? 'bi-heart-fill' : 'bi-heart'}`} />
                 {saved ? 'Saved' : 'Save for later'}
               </button>
             </div>
+            {actionMessage && <p className="detail-action-message" role="status">{actionMessage}</p>}
 
             <div className="detail-description">
               <p className="eyebrow">About this book</p>
@@ -171,7 +224,10 @@ function BookDetailsPage() {
           {book.editions?.length ? (
             <div className="edition-grid">
               {book.editions.map((edition) => (
-                <article className="edition-card" key={edition.id}>
+                <label
+                  className={`edition-card edition-choice${selectedEdition?.id === edition.id ? ' is-selected' : ''}`}
+                  key={edition.id}
+                >
                   <div>
                     <span className="edition-icon"><i className="bi bi-book" /></span>
                     <div>
@@ -185,13 +241,22 @@ function BookDetailsPage() {
                     <div><dt>ISBN</dt><dd>{edition.isbn13 || edition.isbn10 || '—'}</dd></div>
                     <div><dt>Price</dt><dd>{formatPrice(edition.inventory?.price)}</dd></div>
                   </dl>
-                </article>
+                  <input
+                    className="edition-radio"
+                    type="radio"
+                    name="edition"
+                    value={edition.id}
+                    checked={selectedEdition?.id === edition.id}
+                    onChange={() => setSelectedEditionId(edition.id)}
+                  />
+                </label>
               ))}
             </div>
           ) : (
             <p className="edition-empty">Edition information will be available soon.</p>
           )}
         </div>
+        <ReviewSection bookId={book.id} />
       </div>
     </section>
   )
