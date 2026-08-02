@@ -60,7 +60,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/cart/**",
                                 "/api/checkout",
-                                "/api/checkout/**"
+                                "/api/checkout/**",
+                                "/api/orders",
+                                "/api/orders/**"
                         )
                         .hasRole("READER")
                         .anyRequest()
