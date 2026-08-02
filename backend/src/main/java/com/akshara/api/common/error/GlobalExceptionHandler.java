@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.akshara.api.auth.exception.InvalidCredentialsException;
+import com.akshara.api.auth.exception.InvalidAccessTokenException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -57,6 +58,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidCredentials(
             InvalidCredentialsException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.UNAUTHORIZED,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(InvalidAccessTokenException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidAccessToken(
+            InvalidAccessTokenException exception,
             HttpServletRequest request
     ) {
         return buildResponse(
