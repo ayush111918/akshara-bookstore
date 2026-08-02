@@ -11,6 +11,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.akshara.api.auth.dto.LoginRequest;
+import com.akshara.api.auth.exception.InvalidCredentialsException;
 
 import java.util.Locale;
 
@@ -65,6 +67,34 @@ public class AuthService {
                 "Bearer",
                 token.expiresIn(),
                 UserResponse.from(savedUser)
+        );
+    }
+    @Transactional(readOnly = true)
+    public AuthResponse login(LoginRequest request) {
+        String normalizedEmail = request.email()
+                .trim()
+                .toLowerCase(Locale.ROOT);
+
+        AppUser user = userRepository
+                .findByEmailIgnoreCase(normalizedEmail)
+                .orElseThrow(InvalidCredentialsException::new);
+
+        if (!user.isEnabled()
+                || !passwordEncoder.matches(
+                request.password(),
+                user.getPasswordHash()
+        )) {
+            throw new InvalidCredentialsException();
+        }
+
+        JwtService.GeneratedToken token =
+                jwtService.generateToken(user);
+
+        return new AuthResponse(
+                token.value(),
+                "Bearer",
+                token.expiresIn(),
+                UserResponse.from(user)
         );
     }
 }
