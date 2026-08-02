@@ -30,6 +30,13 @@ import com.akshara.api.common.exception.ResourceNotFoundException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.akshara.api.book.dto.BookPageResponse;
+import com.akshara.api.book.dto.BookSearchCriteria;
+import com.akshara.api.book.dto.BookSort;
+import com.akshara.api.book.specification.BookSpecifications;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Comparator;
 import java.util.HashSet;
@@ -110,6 +117,39 @@ public class BookService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    public BookPageResponse search(
+            BookSearchCriteria criteria,
+            int page,
+            int size,
+            BookSort sort
+    ) {
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                createSort(sort)
+        );
+
+        Page<Book> result = bookRepository.findAll(
+                BookSpecifications.withCriteria(criteria),
+                pageable
+        );
+
+        List<BookResponse> content = result.getContent()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+
+        return new BookPageResponse(
+                content,
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages(),
+                result.isFirst(),
+                result.isLast()
+        );
     }
 
     public BookResponse getById(Long id) {
@@ -666,5 +706,33 @@ public class BookService {
 
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private Sort createSort(BookSort requestedSort) {
+        BookSort effectiveSort = requestedSort == null
+                ? BookSort.TITLE_ASC
+                : requestedSort;
+
+        return switch (effectiveSort) {
+            case TITLE_ASC -> Sort.by(
+                    Sort.Order.asc("title").ignoreCase(),
+                    Sort.Order.asc("id")
+            );
+
+            case TITLE_DESC -> Sort.by(
+                    Sort.Order.desc("title").ignoreCase(),
+                    Sort.Order.desc("id")
+            );
+
+            case NEWEST -> Sort.by(
+                    Sort.Order.desc("createdAt"),
+                    Sort.Order.desc("id")
+            );
+
+            case OLDEST -> Sort.by(
+                    Sort.Order.asc("createdAt"),
+                    Sort.Order.asc("id")
+            );
+        };
     }
 }
