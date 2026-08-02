@@ -121,6 +121,74 @@ class InventoryTest {
         );
     }
 
+    @Test
+    void increaseStockShouldRestoreQuantity() {
+        Inventory inventory = createInventory(
+                4,
+                AvailabilityStatus.IN_STOCK
+        );
+
+        inventory.increaseStock(3);
+
+        assertEquals(7, inventory.getStockQuantity());
+        assertEquals(
+                AvailabilityStatus.IN_STOCK,
+                inventory.getAvailabilityStatus()
+        );
+    }
+
+    @Test
+    void increaseStockShouldChangeOutOfStockToInStock() {
+        Inventory inventory = createInventory(
+                0,
+                AvailabilityStatus.OUT_OF_STOCK
+        );
+
+        inventory.increaseStock(2);
+
+        assertEquals(2, inventory.getStockQuantity());
+        assertEquals(
+                AvailabilityStatus.IN_STOCK,
+                inventory.getAvailabilityStatus()
+        );
+    }
+
+    @Test
+    void increaseStockShouldPreserveUnavailableStatus() {
+        Inventory inventory = createInventory(
+                0,
+                AvailabilityStatus.UNAVAILABLE
+        );
+
+        inventory.increaseStock(2);
+
+        assertEquals(2, inventory.getStockQuantity());
+        assertEquals(
+                AvailabilityStatus.UNAVAILABLE,
+                inventory.getAvailabilityStatus()
+        );
+    }
+
+    @Test
+    void increaseStockShouldRejectNonPositiveQuantity() {
+        Inventory inventory = createInventory(
+                5,
+                AvailabilityStatus.IN_STOCK
+        );
+
+        InvalidRequestException exception = assertThrows(
+                InvalidRequestException.class,
+                () -> inventory.increaseStock(0)
+        );
+
+        assertEquals(
+                "Returned quantity must be greater than zero",
+                exception.getMessage()
+        );
+
+        assertEquals(5, inventory.getStockQuantity());
+    }
+
     private Inventory createInventory(
             int stockQuantity,
             AvailabilityStatus availabilityStatus

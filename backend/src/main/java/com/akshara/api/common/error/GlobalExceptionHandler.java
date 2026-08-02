@@ -1,5 +1,7 @@
 package com.akshara.api.common.error;
 
+import com.akshara.api.common.exception.InvalidRequestException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import com.akshara.api.auth.exception.EmailAlreadyExistsException;
 import com.akshara.api.auth.exception.InvalidAccessTokenException;
 import com.akshara.api.auth.exception.InvalidCredentialsException;
@@ -14,12 +16,12 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.validation.method.ParameterErrors;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.akshara.api.common.exception.InvalidRequestException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -139,6 +141,54 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ApiErrorResponse> handleMethodValidation(
+            HandlerMethodValidationException exception,
+            HttpServletRequest request
+    ) {
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+
+        exception.getParameterValidationResults().forEach(result -> {
+
+            // Extract fields inside an @Valid request DTO
+            if (result instanceof ParameterErrors parameterErrors
+                    && !parameterErrors.getFieldErrors().isEmpty()) {
+
+                parameterErrors.getFieldErrors().forEach(error ->
+                        fieldErrors.putIfAbsent(
+                                error.getField(),
+                                error.getDefaultMessage()
+                        )
+                );
+
+                return;
+            }
+
+            // Handle direct constraints such as @Positive on orderId
+            String parameterName = result
+                    .getMethodParameter()
+                    .getParameterName();
+
+            String fieldName = parameterName == null
+                    ? "parameter"
+                    : parameterName;
+
+            result.getResolvableErrors()
+                    .stream()
+                    .findFirst()
+                    .ifPresent(error -> fieldErrors.putIfAbsent(
+                            fieldName,
+                            error.getDefaultMessage()
+                    ));
+        });
+
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                "Request validation failed",
+                request.getRequestURI(),
+                fieldErrors
+        );
+    }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleUnexpectedException(
             Exception exception,

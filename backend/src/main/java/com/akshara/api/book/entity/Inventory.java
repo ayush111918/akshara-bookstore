@@ -183,4 +183,18 @@ public class Inventory {
             availabilityStatus = AvailabilityStatus.OUT_OF_STOCK;
         }
     }
+
+    public void increaseStock(int returnedQuantity) {
+        if (returnedQuantity <= 0) {
+            throw new InvalidRequestException(
+                    "Returned quantity must be greater than zero"
+            );
+        }
+
+        stockQuantity += returnedQuantity;
+
+        if (availabilityStatus == AvailabilityStatus.OUT_OF_STOCK) {
+            availabilityStatus = AvailabilityStatus.IN_STOCK;
+        }
+    }
 }
