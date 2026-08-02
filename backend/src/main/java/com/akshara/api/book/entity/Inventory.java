@@ -19,6 +19,8 @@ import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+import com.akshara.api.common.exception.InvalidRequestException;
+
 @Entity
 @Table(
         name = "inventory",
@@ -107,36 +109,28 @@ public class Inventory {
         return bookEdition;
     }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public Integer getStockQuantity() {
-        return stockQuantity;
-    }
-
-    public AvailabilityStatus getAvailabilityStatus() {
-        return availabilityStatus;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
     public void setBookEdition(BookEdition bookEdition) {
         this.bookEdition = bookEdition;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
     }
 
     public void setPrice(BigDecimal price) {
         this.price = price;
     }
 
+    public Integer getStockQuantity() {
+        return stockQuantity;
+    }
+
     public void setStockQuantity(Integer stockQuantity) {
         this.stockQuantity = stockQuantity;
+    }
+
+    public AvailabilityStatus getAvailabilityStatus() {
+        return availabilityStatus;
     }
 
     public void setAvailabilityStatus(
@@ -145,7 +139,48 @@ public class Inventory {
         this.availabilityStatus = availabilityStatus;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void decreaseStock(int requestedQuantity) {
+        if (requestedQuantity <= 0) {
+            throw new InvalidRequestException(
+                    "Checkout quantity must be greater than zero"
+            );
+        }
+
+        if (!active) {
+            throw new InvalidRequestException(
+                    "Book edition is inactive"
+            );
+        }
+
+        if (availabilityStatus != AvailabilityStatus.IN_STOCK) {
+            throw new InvalidRequestException(
+                    "Book edition is not available"
+            );
+        }
+
+        if (requestedQuantity > stockQuantity) {
+            throw new InvalidRequestException(
+                    "Insufficient stock. Available quantity: "
+                            + stockQuantity
+            );
+        }
+
+        stockQuantity -= requestedQuantity;
+
+        if (stockQuantity == 0) {
+            availabilityStatus = AvailabilityStatus.OUT_OF_STOCK;
+        }
     }
 }

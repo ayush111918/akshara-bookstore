@@ -7,7 +7,6 @@ import com.akshara.api.book.entity.BookEdition;
 import com.akshara.api.book.entity.Inventory;
 import com.akshara.api.book.entity.Publisher;
 import com.akshara.api.book.repository.BookEditionRepository;
-import com.akshara.api.book.repository.InventoryRepository;
 import com.akshara.api.cart.dto.AddCartItemRequest;
 import com.akshara.api.cart.dto.CartItemResponse;
 import com.akshara.api.cart.dto.CartResponse;
@@ -22,6 +21,7 @@ import com.akshara.api.user.entity.AppUser;
 import com.akshara.api.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.akshara.api.book.repository.InventoryRepository;
 
 import java.math.BigDecimal;
 import java.util.List;

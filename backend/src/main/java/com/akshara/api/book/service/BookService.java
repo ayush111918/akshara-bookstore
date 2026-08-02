@@ -23,7 +23,6 @@ import com.akshara.api.book.repository.BookCategoryRepository;
 import com.akshara.api.book.repository.BookEditionRepository;
 import com.akshara.api.book.repository.BookRepository;
 import com.akshara.api.book.repository.CategoryRepository;
-import com.akshara.api.book.repository.InventoryRepository;
 import com.akshara.api.book.repository.PublisherRepository;
 import com.akshara.api.common.exception.DuplicateResourceException;
 import com.akshara.api.common.exception.ResourceNotFoundException;
@@ -37,6 +36,7 @@ import com.akshara.api.book.specification.BookSpecifications;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import com.akshara.api.book.repository.InventoryRepository;
 
 import java.util.Comparator;
 import java.util.HashSet;
