@@ -1,12 +1,6 @@
 package com.akshara.api.cart.service;
 
-import com.akshara.api.book.entity.AvailabilityStatus;
-import com.akshara.api.book.entity.Book;
-import com.akshara.api.book.entity.BookEdition;
-import com.akshara.api.book.entity.BookFormat;
-import com.akshara.api.book.entity.Inventory;
 import com.akshara.api.book.repository.BookEditionRepository;
-import com.akshara.api.book.repository.InventoryRepository;
 import com.akshara.api.cart.dto.AddCartItemRequest;
 import com.akshara.api.cart.dto.CartResponse;
 import com.akshara.api.cart.dto.UpdateCartItemRequest;
@@ -37,6 +31,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import com.akshara.api.book.repository.InventoryRepository;
+import com.akshara.api.book.entity.AvailabilityStatus;
+import com.akshara.api.book.entity.Inventory;
+import com.akshara.api.book.entity.Book;
+import com.akshara.api.book.entity.BookEdition;
+import com.akshara.api.book.entity.BookFormat;
+
 
 @ExtendWith(MockitoExtension.class)
 class CartServiceTest {
