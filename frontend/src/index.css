@@ -1,0 +1,122 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #18221d;
+  background: #f7f8f5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #f7f8f5;
+}
+
+.navbar-logo {
+  width: 145px;
+  height: 58px;
+  object-fit: contain;
+}
+
+.btn-akshara {
+  color: #fff;
+  background: #176b4b;
+  border-color: #176b4b;
+}
+
+.btn-akshara:hover,
+.btn-akshara:focus {
+  color: #fff;
+  background: #10553b;
+  border-color: #10553b;
+}
+
+.hero-section {
+  background:
+    radial-gradient(circle at 15% 30%, rgb(245 166 35 / 16%), transparent 28%),
+    radial-gradient(circle at 85% 20%, rgb(20 108 76 / 15%), transparent 30%),
+    #fff;
+}
+
+.hero-label,
+.section-label {
+  color: #176b4b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.hero-description {
+  max-width: 650px;
+}
+
+.search-form {
+  max-width: 760px;
+}
+
+.book-card {
+  overflow: hidden;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.book-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 1rem 2.5rem rgb(24 34 29 / 12%) !important;
+}
+
+.book-cover {
+  height: 290px;
+  background: #edf1eb;
+}
+
+.book-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fallback-cover {
+  display: flex;
+  height: 100%;
+  padding: 2rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: #fff;
+  text-align: center;
+  background: linear-gradient(145deg, #15306b, #13724f 55%, #efa719);
+}
+
+.fallback-cover i {
+  font-size: 3rem;
+}
+
+.fallback-cover span {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.book-description {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #606a64;
+  font-size: 0.92rem;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.book-price {
+  color: #176b4b;
+}
+
+.empty-state {
+  padding: 4rem 1rem;
+  border: 2px dashed #ccd5ce;
+  border-radius: 1rem;
+  background: #fff;
+}
