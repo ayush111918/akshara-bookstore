@@ -5,11 +5,11 @@ const bookApi = axios.create({
   timeout: 10000,
 })
 
-export async function getBooks(search = '') {
-  const params = {}
+export async function getBooks({ query = '', sort = 'TITLE_ASC' } = {}) {
+  const params = { sort }
 
-  if (search.trim()) {
-    params.search = search.trim()
+  if (query.trim()) {
+    params.query = query.trim()
   }
 
   const response = await bookApi.get('', { params })
