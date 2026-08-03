@@ -1,0 +1,426 @@
+/* Responsive */
+@media (max-width: 1199.98px) {
+  .akshara-navbar { min-height: 68px; }
+  .navbar-collapse { margin-top: 0.8rem; padding: 0.8rem 0 1rem; border-top: 1px solid var(--line); }
+  .akshara-nav-links { align-items: stretch !important; }
+  .nav-icon-button { display: none; }
+  .nav-join-button { width: 100%; }
+  .nav-auth-actions { margin-top: 0.5rem; align-items: stretch; flex-direction: column; gap: 0.55rem; }
+  .nav-signin-link { padding: 0.55rem 0; text-align: center; }
+
+  .hero-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(380px, 0.85fr);
+    gap: 2rem;
+  }
+
+  .hero-cover-card { width: 175px; }
+  .hero-cover-art { height: 258px; }
+  .hero-cover-card-2 { left: 130px; }
+  .hero-cover-card-3 { right: -12px; }
+
+  .book-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .journey-intro {
+    grid-template-columns: 0.45fr 1.15fr 0.75fr;
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .akshara-navbar {
+    min-height: 68px;
+  }
+
+  .navbar-collapse {
+    margin-top: 0.8rem;
+    padding: 0.8rem 0 1rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .akshara-nav-links {
+    align-items: stretch !important;
+  }
+
+  .nav-icon-button {
+    display: none;
+  }
+
+  .nav-join-button {
+    width: 100%;
+  }
+
+  .nav-auth-actions {
+    margin-top: 0.5rem;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .nav-signin-link {
+    padding: 0.55rem 0;
+    text-align: center;
+  }
+
+  .hero-layout {
+    min-height: auto;
+    padding-top: 5.5rem;
+    padding-bottom: 3rem;
+    grid-template-columns: 1fr;
+  }
+
+  .hero-copy {
+    max-width: 760px;
+  }
+
+  .hero-visual {
+    width: min(100%, 610px);
+    min-height: 460px;
+    margin: 0 auto;
+  }
+
+  .hero-cover-card { width: 190px; }
+  .hero-cover-art { height: 278px; }
+  .hero-cover-card-1 { left: 30px; }
+  .hero-cover-card-2 { left: 195px; }
+  .hero-cover-card-3 { right: 0; }
+
+  .journey-intro {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+
+  .journey-intro .eyebrow {
+    margin-bottom: 0;
+  }
+
+  .journey-intro > p:last-child {
+    max-width: 650px;
+  }
+
+  .journey-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 0;
+    gap: 1px;
+    background: rgb(255 255 255 / 14%);
+  }
+
+  .journey-steps article,
+  .journey-steps article:not(:first-child) {
+    min-height: 205px;
+    padding: 1.5rem;
+    background: var(--ink);
+    border: 0;
+  }
+
+  .journey-steps article::before,
+  .journey-steps article:not(:first-child)::before {
+    display: none;
+  }
+
+  .journey-steps h3 {
+    margin-top: 1.8rem;
+  }
+
+  .community-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .community-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .detail-layout {
+    grid-template-columns: minmax(250px, 330px) minmax(0, 1fr);
+    gap: 3rem;
+  }
+
+  .detail-cover-frame {
+    height: 470px;
+    padding: 2rem;
+  }
+
+  .detail-loading {
+    grid-template-columns: 330px minmax(0, 1fr);
+    gap: 3rem;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1.6fr 0.8fr 1fr;
+  }
+
+  .footer-note {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .akshara-brand-mark {
+    width: 39px;
+    height: 39px;
+    flex-basis: 39px;
+    background-position: -52px -13px;
+    background-size: 153px 83.5px;
+  }
+
+  .hero-layout {
+    padding-top: 4rem;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(3rem, 14vw, 4.4rem);
+  }
+
+  .hero-lead {
+    font-size: 1rem;
+  }
+
+  .hero-search {
+    min-height: 58px;
+  }
+
+  .hero-search input {
+    height: 44px;
+  }
+
+  .hero-search button {
+    height: 46px;
+    padding: 0 1rem;
+    font-size: 0.8rem;
+  }
+
+  .hero-proof {
+    gap: 0.8rem 1.1rem;
+  }
+
+  .hero-visual {
+    min-height: 410px;
+    transform: scale(0.88);
+    transform-origin: center top;
+    margin-bottom: -3.5rem;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .catalogue-section,
+  .journey-section,
+  .community-section {
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+  }
+
+  .catalogue-tools {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .sort-control {
+    margin-left: auto;
+  }
+
+  .book-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .book-card-cover-wrap {
+    height: 330px;
+  }
+
+  .journey-steps {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .community-heading .btn {
+    align-self: flex-start;
+  }
+
+  .detail-layout,
+  .detail-loading {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-cover-column,
+  .detail-cover-skeleton {
+    width: min(100%, 390px);
+    margin: 0 auto;
+  }
+
+  .detail-cover-frame,
+  .detail-cover-skeleton {
+    height: 520px;
+  }
+
+  .detail-content h1 {
+    font-size: clamp(2.8rem, 12vw, 4.2rem);
+  }
+
+  .edition-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1.5fr 1fr;
+    gap: 2.5rem;
+  }
+
+  .footer-grid > div:nth-child(3) {
+    display: none;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .container-xl {
+    --bs-gutter-x: 2rem;
+  }
+
+  .akshara-brand-copy small {
+    display: none;
+  }
+
+  .hero-layout {
+    padding-top: 3.5rem;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(2.75rem, 14vw, 3.7rem);
+  }
+
+  .hero-search {
+    min-height: auto;
+    padding: 0.7rem;
+    align-items: stretch;
+    flex-wrap: wrap;
+    border-radius: 18px;
+  }
+
+  .hero-search > i {
+    align-self: center;
+    margin-left: 0.3rem;
+  }
+
+  .hero-search input {
+    width: calc(100% - 2.5rem);
+    flex: none;
+  }
+
+  .hero-search button {
+    width: 100%;
+    border-radius: 12px;
+  }
+
+  .hero-proof {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hero-visual {
+    width: 580px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.62);
+    margin-bottom: -9rem;
+  }
+
+  .book-grid {
+    grid-template-columns: 1fr;
+    gap: 2.7rem;
+  }
+
+  .book-card {
+    max-width: 330px;
+    margin: 0 auto;
+  }
+
+  .book-card-cover-wrap {
+    height: 420px;
+  }
+
+  .catalogue-message {
+    padding: 1.5rem;
+    flex-direction: column;
+  }
+
+  .journey-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .journey-steps article,
+  .journey-steps article:not(:first-child) {
+    min-height: auto;
+    padding: 1.6rem;
+  }
+
+  .journey-steps h3 {
+    margin-top: 1rem;
+  }
+
+  .community-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .community-card:last-child {
+    grid-column: auto;
+  }
+
+  .detail-breadcrumb span {
+    display: none;
+  }
+
+  .detail-cover-frame,
+  .detail-cover-skeleton {
+    height: 450px;
+    padding: 1.8rem;
+  }
+
+  .detail-actions {
+    flex-direction: column;
+  }
+
+  .detail-cart-button,
+  .detail-save-button {
+    width: 100%;
+  }
+
+  .detail-price-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .edition-card dl {
+    grid-template-columns: 1fr;
+  }
+
+  .site-footer {
+    padding-top: 4rem;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-grid > div:nth-child(2) {
+    display: none;
+  }
+
+  .footer-bottom {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

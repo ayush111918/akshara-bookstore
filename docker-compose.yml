@@ -1,0 +1,49 @@
+services:
+  database:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: akshara
+      MYSQL_USER: akshara_app
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - akshara_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mysql://database:3306/akshara?createDatabaseIfNotExist=true&serverTimezone=Asia/Kolkata
+      DB_USERNAME: akshara_app
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER:-akshara-api}
+      BOOK_IMPORT_CONTACT: ${BOOK_IMPORT_CONTACT}
+      GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY:-}
+      PERSONAL_LIBRARY_STORAGE: /app/data/personal-library
+    volumes:
+      - akshara_uploads:/app/data/personal-library
+      - akshara_logs:/app/logs
+    depends_on:
+      database:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${AKSHARA_PORT:-8088}:80"
+    depends_on:
+      - backend
+
+volumes:
+  akshara_mysql:
+  akshara_uploads:
+  akshara_logs:

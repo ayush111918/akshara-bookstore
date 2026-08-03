@@ -1,0 +1,112 @@
+@media (max-width: 991.98px) {
+  .reading-journey-hero {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .reading-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .reading-stat-grid > div {
+    border-bottom: 1px solid #e4d9ca;
+  }
+
+  .reading-workspace,
+  .reading-workspace.has-notebook {
+    grid-template-columns: 1fr;
+  }
+
+  .reading-notebook {
+    max-height: none;
+    position: static;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .reading-goal-card {
+    align-items: stretch;
+    grid-template-columns: auto 1fr;
+  }
+
+  .reading-goal-card form {
+    grid-column: 1 / -1;
+  }
+
+  .reading-progress-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .reading-progress-form button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .reading-journey-hero {
+    padding-block: 3.5rem;
+  }
+
+  .reading-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reading-stat-grid > div {
+    min-height: 96px;
+  }
+
+  .reading-goal-card form,
+  .reading-progress-form,
+  .reading-annotation-form > div {
+    align-items: stretch;
+    flex-direction: column;
+    grid-template-columns: 1fr;
+  }
+
+  .reading-goal-card input {
+    width: 100%;
+  }
+
+  .reading-goal-card {
+    grid-template-columns: 1fr;
+  }
+
+  .reading-focus-bar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .reading-focus-bar button {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .reading-goal-ring {
+    justify-self: center;
+  }
+
+  .reading-entry-select {
+    grid-template-columns: 50px 1fr;
+  }
+
+  .reading-entry-cover {
+    height: 70px;
+    width: 48px;
+  }
+
+  .reading-status {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .reading-entry-meta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .reading-entry-meta a {
+    margin-left: 0;
+  }
+}

@@ -1,0 +1,97 @@
+package com.akshara.api.review.controller;
+
+import com.akshara.api.review.dto.ReviewRequest;
+import com.akshara.api.review.dto.ReviewResponse;
+import com.akshara.api.review.dto.UpdateReviewRequest;
+import com.akshara.api.review.service.ReviewService;
+import com.akshara.api.review.dto.ReviewReplyRequest;
+import com.akshara.api.review.dto.ReviewReplyResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/reviews")
+@Validated
+public class ReviewController {
+
+    private final ReviewService reviewService;
+
+    public ReviewController(ReviewService reviewService) {
+        this.reviewService = reviewService;
+    }
+
+    @GetMapping("/me")
+    public List<ReviewResponse> getMine(@AuthenticationPrincipal Jwt jwt) {
+        return reviewService.getMine(jwt.getSubject());
+    }
+
+    @PostMapping
+    public ResponseEntity<ReviewResponse> create(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody ReviewRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reviewService.create(jwt.getSubject(), request));
+    }
+
+    @PutMapping("/{reviewId}")
+    public ReviewResponse update(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable @Positive Long reviewId,
+            @Valid @RequestBody UpdateReviewRequest request
+    ) {
+        return reviewService.update(jwt.getSubject(), reviewId, request);
+    }
+
+    @DeleteMapping("/{reviewId}")
+    public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable @Positive Long reviewId
+    ) {
+        reviewService.delete(jwt.getSubject(), reviewId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{reviewId}/replies")
+    public ResponseEntity<ReviewReplyResponse> createReply(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable @Positive Long reviewId,
+            @Valid @RequestBody ReviewReplyRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reviewService.createReply(jwt.getSubject(), reviewId, request));
+    }
+
+    @PutMapping("/replies/{replyId}")
+    public ReviewReplyResponse updateReply(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable @Positive Long replyId,
+            @Valid @RequestBody ReviewReplyRequest request
+    ) {
+        return reviewService.updateReply(jwt.getSubject(), replyId, request);
+    }
+
+    @DeleteMapping("/replies/{replyId}")
+    public ResponseEntity<Void> deleteReply(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable @Positive Long replyId
+    ) {
+        reviewService.deleteReply(jwt.getSubject(), replyId);
+        return ResponseEntity.noContent().build();
+    }
+}
