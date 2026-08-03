@@ -5,7 +5,7 @@ import { getApiErrorMessage } from '../services/api'
 
 function AuthPage({ mode }) {
   const isRegister = mode === 'register'
-  const { isAuthenticated, login, register } = useAuth()
+  const { user, isAuthenticated, login, register } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [form, setForm] = useState({ fullName: '', email: '', password: '' })
@@ -13,7 +13,7 @@ function AuthPage({ mode }) {
   const [submitting, setSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  if (isAuthenticated) return <Navigate to="/" replace />
+  if (isAuthenticated) return <Navigate to={user?.role === 'ADMIN' ? '/admin/books' : '/'} replace />
 
   function updateField(event) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
@@ -24,9 +24,14 @@ function AuthPage({ mode }) {
     setSubmitting(true)
     setError('')
     try {
-      if (isRegister) await register(form)
-      else await login({ email: form.email, password: form.password })
-      navigate(location.state?.from?.pathname || '/', { replace: true })
+      const authenticatedUser = isRegister
+        ? await register(form)
+        : await login({ email: form.email, password: form.password })
+      const requestedPath = location.state?.from?.pathname
+      const destination = authenticatedUser?.role === 'ADMIN'
+        ? (requestedPath?.startsWith('/admin/') ? requestedPath : '/admin/books')
+        : (requestedPath?.startsWith('/admin/') ? '/' : requestedPath || '/')
+      navigate(destination, { replace: true })
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, isRegister ? 'Registration failed.' : 'Login failed.'))
     } finally {

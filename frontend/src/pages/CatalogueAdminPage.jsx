@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   AVAILABILITY_OPTIONS,
   deleteCatalogueBook,
@@ -22,6 +22,8 @@ function inventoryDraft(inventory) {
 }
 
 function CatalogueAdminPage() {
+  const [searchParams] = useSearchParams()
+  const focusedBookId = searchParams.get('book')
   const [books, setBooks] = useState([])
   const [drafts, setDrafts] = useState({})
   const [query, setQuery] = useState('')
@@ -81,6 +83,12 @@ function CatalogueAdminPage() {
       ...(book.editions ?? []).flatMap((edition) => [edition.sku, edition.isbn13, edition.isbn10]),
     ].some((value) => String(value ?? '').toLowerCase().includes(needle)))
   }, [books, query])
+
+  useEffect(() => {
+    if (loading || !focusedBookId) return
+    const target = document.getElementById(`admin-book-${focusedBookId}`)
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [focusedBookId, loading, visibleBooks.length])
 
   const summary = useMemo(() => {
     const editions = books.flatMap((book) => book.editions ?? [])
@@ -251,7 +259,12 @@ function CatalogueAdminPage() {
 
         <div className="catalogue-admin-list">
           {visibleBooks.map((book) => (
-            <article className="catalogue-admin-book" key={book.id}>
+            <article
+              id={`admin-book-${book.id}`}
+              className={`catalogue-admin-book${String(book.id) === focusedBookId ? ' is-targeted' : ''}`}
+              key={book.id}
+              aria-label={`Manage ${book.title}`}
+            >
               <header>
                 <div className="catalogue-admin-cover">{book.coverImageUrl ? <img src={book.coverImageUrl} alt="" /> : <i className="bi bi-book" />}</div>
                 <div><p>{(book.authors ?? []).map((author) => author.name).join(', ') || 'Unknown author'}</p><h2>{book.title}</h2><span>{book.editions?.length ?? 0} {(book.editions?.length ?? 0) === 1 ? 'edition' : 'editions'}</span></div>

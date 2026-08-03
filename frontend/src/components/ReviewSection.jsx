@@ -108,7 +108,7 @@ function ReviewSection({ bookId }) {
         </div>
       </div>
 
-      {user ? (
+      {user?.role === 'READER' ? (
         <form className="review-form" onSubmit={handleSubmit}>
           {ownReview && <div className="review-editing-notice"><i className="bi bi-pencil-square" /> You are editing your published review. You can update or delete it here, or from <Link to="/my-reviews">My Reviews</Link>.</div>}
           <div className="rating-picker" aria-label="Rating">
@@ -143,6 +143,8 @@ function ReviewSection({ bookId }) {
             {ownReview && <button className="text-button danger" disabled={saving} type="button" onClick={handleDelete}>Delete</button>}
           </div>
         </form>
+      ) : user?.role === 'ADMIN' ? (
+        <div className="review-signin">Reviews are published from reader accounts. Administrators can still read the community's reviews here.</div>
       ) : (
         <div className="review-signin">Already read it? <Link to="/login">Sign in to write a review.</Link></div>
       )}

@@ -38,7 +38,11 @@ function HeroBook({ book, position }) {
 }
 
 function HomeCatalogueHero({ books, search, onSearchChange, onSubmit, onCategory }) {
-  const featuredBooks = [...books.slice(0, 3)]
+  const featuredBooks = [
+    ...books.filter((book) => book.featured),
+    ...books.filter((book) => !book.featured),
+  ].slice(0, 3)
+  const hasCuratedBooks = featuredBooks.some((book) => book.featured)
   while (featuredBooks.length < 3) featuredBooks.push(PLACEHOLDER_BOOKS[featuredBooks.length])
 
   return (
@@ -91,8 +95,8 @@ function HomeCatalogueHero({ books, search, onSearchChange, onSubmit, onCategory
             ))}
           </div>
           <div className="hero-shelf-note">
-            <span><i className="bi bi-stars" /> From the Akshara shelf</span>
-            <strong>{books[0]?.title ?? 'Books selected for curious readers'}</strong>
+            <span><i className="bi bi-stars" /> {hasCuratedBooks ? 'Featured by Akshara' : 'From the Akshara shelf'}</span>
+            <strong>{featuredBooks[0]?.title ?? 'Books selected for curious readers'}</strong>
             <small>Discover · Read · Grow</small>
           </div>
         </div>

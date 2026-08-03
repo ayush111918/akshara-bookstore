@@ -35,6 +35,18 @@
   text-decoration: none;
 }
 
+.nav-role-badge {
+  padding: 0.24rem 0.42rem;
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--forest);
+  border-radius: 999px;
+}
+
 .nav-reader-menu button,
 .text-button {
   padding: 0;

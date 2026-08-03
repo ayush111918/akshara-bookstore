@@ -27,6 +27,7 @@ function BookDetailsPage() {
   const [selectedEditionId, setSelectedEditionId] = useState(null)
   const [actionBusy, setActionBusy] = useState(false)
   const [actionMessage, setActionMessage] = useState('')
+  const isAdmin = user?.role === 'ADMIN'
 
   useEffect(() => {
     let active = true
@@ -100,7 +101,11 @@ function BookDetailsPage() {
   const saved = wishlistBookIds.has(book.id)
 
   function requireReader() {
-    if (user) return true
+    if (user?.role === 'READER') return true
+    if (isAdmin) {
+      setActionMessage('Administrator accounts manage the catalogue and cannot place reader orders.')
+      return false
+    }
     navigate('/login', { state: { from: location } })
     return false
   }
@@ -180,27 +185,38 @@ function BookDetailsPage() {
               <span>Inclusive of applicable taxes</span>
             </div>
 
-            <div className="detail-actions">
-              <button
-                className="btn btn-ink detail-cart-button"
-                type="button"
-                disabled={actionBusy || !selectedAvailable}
-                onClick={handleCart}
-              >
-                <i className="bi bi-bag-plus" />
-                {actionBusy ? 'Please wait…' : 'Add to cart'}
-              </button>
-              <button
-                className={`detail-save-button${saved ? ' is-saved' : ''}`}
-                type="button"
-                aria-pressed={saved}
-                disabled={actionBusy}
-                onClick={handleWishlist}
-              >
-                <i className={`bi ${saved ? 'bi-heart-fill' : 'bi-heart'}`} />
-                {saved ? 'Saved' : 'Save for later'}
-              </button>
-            </div>
+            {isAdmin ? (
+              <div className="detail-actions detail-admin-actions">
+                <Link className="btn btn-ink detail-cart-button" to={`/admin/books?book=${book.id}`}>
+                  <i className="bi bi-sliders" /> Manage this book
+                </Link>
+                <Link className="detail-save-button" to="/admin/books/import">
+                  <i className="bi bi-cloud-arrow-down" /> Import or add a book
+                </Link>
+              </div>
+            ) : (
+              <div className="detail-actions">
+                <button
+                  className="btn btn-ink detail-cart-button"
+                  type="button"
+                  disabled={actionBusy || !selectedAvailable}
+                  onClick={handleCart}
+                >
+                  <i className="bi bi-bag-plus" />
+                  {actionBusy ? 'Please wait…' : 'Add to cart'}
+                </button>
+                <button
+                  className={`detail-save-button${saved ? ' is-saved' : ''}`}
+                  type="button"
+                  aria-pressed={saved}
+                  disabled={actionBusy}
+                  onClick={handleWishlist}
+                >
+                  <i className={`bi ${saved ? 'bi-heart-fill' : 'bi-heart'}`} />
+                  {saved ? 'Saved' : 'Save for later'}
+                </button>
+              </div>
+            )}
             {actionMessage && <p className="detail-action-message" role="status">{actionMessage}</p>}
 
             <div className="detail-description">

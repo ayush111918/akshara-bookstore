@@ -22,6 +22,7 @@
 .admin-feedback-success { background: #e0eee7; border: 1px solid #b2d2c1; color: #17533f; }
 .catalogue-admin-list { display: grid; gap: 1.25rem; }
 .catalogue-admin-book { overflow: hidden; background: #fffdf8; border: 1px solid #dcd2c2; border-radius: 18px; }
+.catalogue-admin-book.is-targeted { border-color: #c98a29; box-shadow: 0 0 0 3px rgb(201 138 41 / 18%), 0 16px 38px rgb(25 47 39 / 12%); scroll-margin-top: 96px; }
 .catalogue-admin-book > header { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: center; gap: 1rem; padding: 1.25rem 1.4rem; border-bottom: 1px solid #e7ded1; }
 .catalogue-admin-cover { display: grid; place-items: center; width: 58px; height: 76px; overflow: hidden; border-radius: 6px; background: #e8dfd0; color: #b37c1d; font-size: 1.5rem; }
 .catalogue-admin-cover img { width: 100%; height: 100%; object-fit: cover; }
@@ -74,6 +75,15 @@
   gap: 0.45rem;
   color: var(--forest) !important;
   background: var(--paper-deep);
+  border-radius: 999px;
+}
+
+.admin-storefront-link {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.45rem;
+  color: #315c52 !important;
+  border: 1px solid #cfc6b6;
   border-radius: 999px;
 }
 

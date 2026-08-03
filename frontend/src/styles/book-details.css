@@ -189,6 +189,9 @@
 }
 
 .detail-save-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 44px;
   padding: 0.7rem 1.1rem;
   color: var(--ink);
@@ -197,6 +200,7 @@
   background: transparent;
   border: 1px solid #bcb4a8;
   border-radius: 7px;
+  text-decoration: none;
 }
 
 .detail-save-button i {
@@ -455,4 +459,3 @@
   text-transform: uppercase;
   border-top: 1px solid rgb(255 255 255 / 9%);
 }
-

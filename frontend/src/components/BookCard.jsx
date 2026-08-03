@@ -20,6 +20,7 @@ function BookCard({ book }) {
   const location = useLocation()
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
+  const isAdmin = user?.role === 'ADMIN'
   const edition = getPrimaryEdition(book)
   const availability = getAvailability(book)
   const category = book.categories?.[0]?.name
@@ -30,7 +31,11 @@ function BookCard({ book }) {
     : availability.label
 
   function requireReader() {
-    if (user) return true
+    if (user?.role === 'READER') return true
+    if (isAdmin) {
+      setMessage('Use catalogue administration to manage this book.')
+      return false
+    }
     navigate('/login', { state: { from: location } })
     return false
   }
@@ -76,16 +81,20 @@ function BookCard({ book }) {
           )}
         </Link>
 
-        <button
-          className={`save-book-button${saved ? ' is-saved' : ''}`}
-          type="button"
-          aria-label={saved ? `Remove ${book.title} from wishlist` : `Save ${book.title} to wishlist`}
-          aria-pressed={saved}
-          disabled={busy}
-          onClick={handleWishlist}
-        >
-          <i className={`bi ${saved ? 'bi-heart-fill' : 'bi-heart'}`} />
-        </button>
+        {!isAdmin && (
+          <button
+            className={`save-book-button${saved ? ' is-saved' : ''}`}
+            type="button"
+            aria-label={saved ? `Remove ${book.title} from wishlist` : `Save ${book.title} to wishlist`}
+            aria-pressed={saved}
+            disabled={busy}
+            onClick={handleWishlist}
+          >
+            <i className={`bi ${saved ? 'bi-heart-fill' : 'bi-heart'}`} />
+          </button>
+        )}
+
+        {book.featured && <span className="featured-book-badge"><i className="bi bi-stars" /> Akshara pick</span>}
 
         <span className={`availability-badge availability-${availability.tone}`}>
           {availability.label}
@@ -115,9 +124,15 @@ function BookCard({ book }) {
             <strong>{formatPrice(getBookPrice(book))}</strong>
           </div>
           <div className="book-card-actions">
-            <button className="book-card-cart-button" type="button" disabled={busy || availability.tone !== 'available'} onClick={handleCart} aria-label={`Add ${book.title} to cart`}>
-              <i className="bi bi-bag-plus" /> {busy ? 'Adding…' : 'Add to bag'}
-            </button>
+            {isAdmin ? (
+              <Link className="book-card-manage-button" to={`/admin/books?book=${book.id}`}>
+                <i className="bi bi-sliders" /> Manage
+              </Link>
+            ) : (
+              <button className="book-card-cart-button" type="button" disabled={busy || availability.tone !== 'available'} onClick={handleCart} aria-label={`Add ${book.title} to cart`}>
+                <i className="bi bi-bag-plus" /> {busy ? 'Adding…' : 'Add to bag'}
+              </button>
+            )}
             <Link className="book-card-arrow" to={`/books/${book.id}`} aria-label={`View details for ${book.title}`}><i className="bi bi-arrow-up-right" /></Link>
           </div>
         </div>

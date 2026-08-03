@@ -240,6 +240,23 @@
   box-shadow: 0 5px 15px rgb(16 42 38 / 12%);
 }
 
+.featured-book-badge {
+  position: absolute;
+  z-index: 2;
+  top: 0.8rem;
+  left: 0.8rem;
+  padding: 0.42rem 0.62rem;
+  color: #68420b;
+  font-size: 0.61rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: #fff0c9;
+  border: 1px solid rgb(197 133 33 / 28%);
+  border-radius: 999px;
+  box-shadow: 0 5px 15px rgb(16 42 38 / 12%);
+}
+
 .availability-badge::before {
   width: 6px;
   height: 6px;
@@ -362,6 +379,23 @@
 }
 
 .book-card-cart-button:hover:not(:disabled) { background: #0c3a31; }
+
+.book-card-manage-button {
+  min-height: 36px;
+  padding: 0.45rem 0.7rem;
+  color: var(--forest);
+  font-size: 0.7rem;
+  font-weight: 750;
+  white-space: nowrap;
+  border: 1px solid var(--forest);
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.book-card-manage-button:hover {
+  color: #fff;
+  background: var(--forest);
+}
 
 .book-card-cart-button:disabled {
   color: #71807b;

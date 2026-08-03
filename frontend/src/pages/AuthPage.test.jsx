@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AuthPage from './AuthPage'
 
@@ -23,6 +23,23 @@ describe('AuthPage', () => {
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Continue to Akshara' }))
     await waitFor(() => expect(login).toHaveBeenCalledWith({ email: 'reader@example.com', password: 'password123' }))
+  })
+
+  it('sends an administrator to catalogue operations after login', async () => {
+    login.mockResolvedValue({ role: 'ADMIN' })
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<AuthPage mode="login" />} />
+          <Route path="/admin/books" element={<p>Catalogue operations</p>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'admin@example.com' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Akshara' }))
+
+    expect(await screen.findByText('Catalogue operations')).toBeInTheDocument()
   })
 
   it('allows the password to be shown without submitting the form', () => {
