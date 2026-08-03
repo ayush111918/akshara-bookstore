@@ -6,11 +6,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
+import org.springframework.http.HttpStatus;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.queryParam;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
 class OpenLibraryBookMetadataProviderTest {
 
@@ -25,6 +27,7 @@ class OpenLibraryBookMetadataProviderTest {
                 .andRespond(withSuccess("""
                         {"numFound":21,"docs":[{
                           "key":"/works/OL1W","title":"Atomic Habits",
+                          "description":"A practical guide to building better habits.",
                           "author_name":["James Clear"],"subject":["Habits"],
                           "editions":{"docs":[{
                             "key":"/books/OL1M","title":"Atomic Habits",
@@ -49,6 +52,7 @@ class OpenLibraryBookMetadataProviderTest {
         assertEquals("/books/OL1M", result.results().get(0).editionId());
         assertEquals("9780735211292", result.results().get(0).isbn13());
         assertEquals("2018-01-01", result.results().get(0).publicationDate());
+        assertEquals("A practical guide to building better habits.", result.results().get(0).description());
         server.verify();
     }
 
@@ -90,5 +94,23 @@ class OpenLibraryBookMetadataProviderTest {
 
         assertEquals(0, result.totalResults());
         assertEquals(0, result.results().size());
+    }
+
+    @Test
+    void retriesOneTransientFailureThenCachesTheSuccessfulResponse() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://openlibrary.test");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        server.expect(request -> { }).andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+        server.expect(request -> { }).andRespond(withSuccess(
+                "{\"numFound\":1,\"docs\":[{\"key\":\"/works/R\",\"title\":\"Recovered\"}]}",
+                MediaType.APPLICATION_JSON
+        ));
+        OpenLibraryBookMetadataProvider provider =
+                new OpenLibraryBookMetadataProvider(builder.build());
+        ExternalBookSearchQuery query = new ExternalBookSearchQuery("Recovered", 1, 10);
+
+        assertEquals("Recovered", provider.search(query).results().get(0).title());
+        assertEquals("Recovered", provider.search(query).results().get(0).title());
+        server.verify();
     }
 }

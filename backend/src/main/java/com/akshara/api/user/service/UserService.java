@@ -60,7 +60,7 @@ public class UserService {
         user.closeAccount();
         user.setPasswordHash(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
         userRepository.save(user);
-        auditService.record(id, email, "ACCOUNT_DELETION", "SUCCESS", ipAddress, userAgent,
+        auditService.recordAfterCommit(id, email, "ACCOUNT_DELETION", "SUCCESS", ipAddress, userAgent,
                 "Private reader data removed; account disabled and anonymized; order history retained");
     }
 }

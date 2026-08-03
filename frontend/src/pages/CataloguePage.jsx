@@ -1,26 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import BookCard from '../components/BookCard'
 import { getBooks } from '../services/bookService'
 import { getRecentReviews } from '../services/readerService'
 import useAuth from '../hooks/useAuth'
-
-const categories = [
-  { name: 'Fiction', icon: 'bi-stars' },
-  { name: 'Indian literature', icon: 'bi-feather' },
-  { name: 'Technology', icon: 'bi-cpu' },
-  { name: 'History', icon: 'bi-hourglass-split' },
-  { name: 'Philosophy', icon: 'bi-lightbulb' },
-  { name: 'Children', icon: 'bi-balloon' },
-]
-
-const journeySteps = [
-  { number: '01', title: 'Discover', text: 'Find books through ideas, moods, genres, and curated shelves.', href: '#catalogue', action: 'Explore books' },
-  { number: '02', title: 'Evaluate', text: 'Understand a book through details, editions, ratings, and reviews.', href: '#catalogue', action: 'Choose a book' },
-  { number: '03', title: 'Organize', text: 'Shape a personal library with wishlists and reading statuses.', to: '/wishlist', adminTo: '/admin/books', action: 'Open wishlist', adminAction: 'Manage catalogue' },
-  { number: '04', title: 'Connect', text: 'Exchange perspectives through discussions and reader collections.', to: '/community', action: 'Join the community' },
-  { number: '05', title: 'Purchase', text: 'Choose an edition and complete the journey in one place.', to: '/cart', adminTo: '/admin/books', action: 'Open your cart', adminAction: 'Manage inventory' },
-]
+import CatalogueJourneySection from '../components/CatalogueJourneySection'
+import CatalogueCommunityPreview from '../components/CatalogueCommunityPreview'
+import HomeCatalogueHero from '../components/HomeCatalogueHero'
 
 function CataloguePage() {
   const { user } = useAuth()
@@ -108,91 +93,13 @@ function CataloguePage() {
 
   return (
     <>
-      <section className="home-hero">
-        <div className="hero-orb hero-orb-one" aria-hidden="true" />
-        <div className="hero-orb hero-orb-two" aria-hidden="true" />
-
-        <div className="container-xl hero-layout">
-          <div className="hero-copy">
-            <p className="eyebrow hero-eyebrow">
-              <span /> A reader-first bookstore
-            </p>
-            <h1>
-              Every book begins<br />
-              with an <em>अक्षर.</em>
-            </h1>
-            <p className="hero-lead">
-              Discover books with depth, understand them through people, and build
-              a reading life that keeps growing.
-            </p>
-
-            <form className="hero-search" onSubmit={handleSubmit} role="search">
-              <i className="bi bi-search" aria-hidden="true" />
-              <input
-                type="search"
-                aria-label="Search the book catalogue"
-                placeholder="Search by title, author, or category"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-              <button type="submit">Explore books</button>
-            </form>
-
-            <div className="hero-proof" aria-label="Akshara platform highlights">
-              <span><i className="bi bi-compass" /> Curated discovery</span>
-              <span><i className="bi bi-people" /> Reader community</span>
-              <span><i className="bi bi-bookmark-heart" /> Personal library</span>
-            </div>
-          </div>
-
-          <div className="hero-visual" aria-label="A collection of books curated for Akshara readers">
-            <div className="hero-sun" aria-hidden="true" />
-            <div className="hero-book hero-book-one">
-              <span>AKSHARA<br />EDITIONS</span>
-              <strong>The Art of<br />Curiosity</strong>
-              <small>Ideas that open new doors</small>
-            </div>
-            <div className="hero-book hero-book-two">
-              <span>READER'S PICK</span>
-              <strong>Stories<br />from Home</strong>
-              <small>Indian voices · Volume I</small>
-            </div>
-            <div className="hero-book hero-book-three">
-              <span>NEW THOUGHT</span>
-              <strong>The Quiet<br />Future</strong>
-              <small>Technology & humanity</small>
-            </div>
-            <div className="hero-quote-card">
-              <i className="bi bi-quote" />
-              <p>A book is not only bought. It is discovered, understood, shared, and remembered.</p>
-              <span>— The Akshara idea</span>
-            </div>
-            <div className="hero-seal"><span>अ</span><small>Begin here</small></div>
-          </div>
-        </div>
-      </section>
-
-      <section className="category-strip" aria-labelledby="category-heading">
-        <div className="container-xl">
-          <div className="category-strip-heading">
-            <div>
-              <p className="eyebrow">Browse by interest</p>
-              <h2 id="category-heading">Where does your curiosity lead?</h2>
-            </div>
-            <span>Choose a shelf to begin</span>
-          </div>
-
-          <div className="category-list">
-            {categories.map((category) => (
-              <button type="button" key={category.name} onClick={() => handleCategory(category.name)}>
-                <span><i className={`bi ${category.icon}`} /></span>
-                {category.name}
-                <i className="bi bi-arrow-right" />
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
+      <HomeCatalogueHero
+        books={books}
+        search={search}
+        onSearchChange={(event) => setSearch(event.target.value)}
+        onSubmit={handleSubmit}
+        onCategory={handleCategory}
+      />
 
       <section className="catalogue-section" id="catalogue" aria-labelledby="catalogue-heading">
         <div className="container-xl">
@@ -269,74 +176,8 @@ function CataloguePage() {
         </div>
       </section>
 
-      <section className="journey-section" id="journey" aria-labelledby="journey-heading">
-        <div className="container-xl">
-          <div className="journey-intro">
-            <p className="eyebrow eyebrow-light">More than a transaction</p>
-            <h2 id="journey-heading">The complete reader journey,<br />in one thoughtful place.</h2>
-            <p>
-              Akshara connects the moments before and after purchase—the questions,
-              conversations, collections, and discoveries that turn books into a reading life.
-            </p>
-          </div>
-
-          <div className="journey-steps">
-            {journeySteps.map((step) => {
-              const isAdmin = user?.role === 'ADMIN'
-              const destination = isAdmin && step.adminTo ? step.adminTo : step.to
-              const action = isAdmin && step.adminAction ? step.adminAction : step.action
-              return (
-              <article key={step.number} className="journey-step">
-                <span>{step.number}</span>
-                <h3>{step.title}</h3>
-                <p>{step.text}</p>
-                {step.href ? (
-                  <a className="journey-step-link" href={step.href}>{action} <i className="bi bi-arrow-right" /></a>
-                ) : (
-                  <Link className="journey-step-link" to={destination}>{action} <i className="bi bi-arrow-right" /></Link>
-                )}
-              </article>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className="community-section" id="community" aria-labelledby="community-heading">
-        <div className="container-xl">
-          <div className="section-heading community-heading">
-            <div>
-              <p className="eyebrow">The reading room</p>
-              <h2 id="community-heading">Books become richer in conversation.</h2>
-              <p>Discover the lists, reviews, and discussions taking shape across the Akshara community.</p>
-            </div>
-            <Link className="btn btn-ink" to="/community">Visit the community <i className="bi bi-arrow-right" /></Link>
-          </div>
-
-          <div className="community-grid">
-            {recentReviews.map((review) => (
-              <article className="community-card" key={review.id}>
-                <div className="community-card-top">
-                  <span className="reader-avatar">{review.readerName.split(/\s+/).map((part) => part[0]).slice(0, 2).join('')}</span>
-                  <div><strong>{review.readerName}</strong><small>{review.rating}/5 reader review</small></div>
-                  <i className="bi bi-bookmark" />
-                </div>
-                <h3>{review.headline || `Thoughts on ${review.bookTitle}`}</h3>
-                <p>{review.content}</p>
-                <Link to={`/books/${review.bookId}#reviews`} aria-label={`Read review of ${review.bookTitle}`}><i className="bi bi-arrow-up-right" /></Link>
-              </article>
-            ))}
-            {!recentReviews.length && (
-              <article className="community-card community-empty-card">
-                <div className="community-card-top"><span className="reader-avatar">अ</span><div><strong>The reading room</strong><small>Ready for its first voice</small></div></div>
-                <h3>Be the first reader to begin a conversation.</h3>
-                <p>Open any book, add a rating and share what stayed with you.</p>
-                <Link to="/community" aria-label="Visit the community"><i className="bi bi-arrow-up-right" /></Link>
-              </article>
-            )}
-          </div>
-        </div>
-      </section>
+      <CatalogueJourneySection isAdmin={user?.role === 'ADMIN'} />
+      <CatalogueCommunityPreview reviews={recentReviews} />
     </>
   )
 }

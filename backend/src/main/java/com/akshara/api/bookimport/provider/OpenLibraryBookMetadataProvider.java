@@ -19,6 +19,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.Clock;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Component
 public class OpenLibraryBookMetadataProvider implements BookMetadataProvider {
@@ -26,22 +30,36 @@ public class OpenLibraryBookMetadataProvider implements BookMetadataProvider {
     private static final String RESULT_FIELDS =
             "key,title,subtitle,author_name,publisher,language,subject,"
                     + "first_publish_year,isbn,cover_i,number_of_pages_median,"
-                    + "edition_key,publish_date,editions";
+                    + "edition_key,publish_date,description,editions";
+
+    private static final int MAX_CACHE_ENTRIES = 200;
 
     private final RestClient client;
+    private final Duration cacheTtl;
+    private final Clock clock;
+    private final ConcurrentMap<ExternalBookSearchQuery, CachedSearch> cache =
+            new ConcurrentHashMap<>();
 
     @Autowired
     public OpenLibraryBookMetadataProvider(
             @Value("${app.book-metadata.open-library.base-url:https://openlibrary.org}") String baseUrl,
             @Value("${app.book-import.contact:admin@akshara.local}") String contact,
             @Value("${app.book-metadata.open-library.connect-timeout-ms:5000}") int connectTimeout,
-            @Value("${app.book-metadata.open-library.read-timeout-ms:25000}") int readTimeout
+            @Value("${app.book-metadata.open-library.read-timeout-ms:25000}") int readTimeout,
+            @Value("${app.book-metadata.open-library.cache-ttl-seconds:300}") long cacheTtlSeconds
     ) {
-        this(buildClient(baseUrl, contact, connectTimeout, readTimeout));
+        this(buildClient(baseUrl, contact, connectTimeout, readTimeout),
+                Duration.ofSeconds(cacheTtlSeconds), Clock.systemUTC());
     }
 
     OpenLibraryBookMetadataProvider(RestClient client) {
+        this(client, Duration.ofMinutes(5), Clock.systemUTC());
+    }
+
+    OpenLibraryBookMetadataProvider(RestClient client, Duration cacheTtl, Clock clock) {
         this.client = client;
+        this.cacheTtl = cacheTtl;
+        this.clock = clock;
     }
 
     private static RestClient buildClient(
@@ -68,39 +86,61 @@ public class OpenLibraryBookMetadataProvider implements BookMetadataProvider {
 
     @Override
     public ExternalBookSearchPage search(ExternalBookSearchQuery query) {
-        try {
-            int offset = (query.page() - 1) * query.size();
-            JsonNode root = client.get()
-                    .uri(uriBuilder -> uriBuilder.path("/search.json")
-                            .queryParam("q", query.query())
-                            .queryParam("limit", query.size())
-                            .queryParam("offset", offset)
-                            .queryParam("fields", RESULT_FIELDS)
-                            .build())
-                    .retrieve()
-                    .body(JsonNode.class);
+        CachedSearch cached = cache.get(query);
+        Instant now = clock.instant();
+        if (cached != null && cached.expiresAt().isAfter(now)) {
+            return cached.page();
+        }
 
-            List<ExternalBookResult> results = new ArrayList<>();
-            for (JsonNode work : array(root, "docs")) {
-                JsonNode editions = work.path("editions").path("docs");
-                if (editions.isArray() && !editions.isEmpty()) {
-                    for (JsonNode edition : editions) {
-                        results.add(mapResult(work, edition));
-                    }
-                } else {
-                    results.add(mapResult(work, work));
-                }
-            }
-            long total = root == null ? 0 : root.path("numFound").asLong(0);
-            return new ExternalBookSearchPage(
-                    source(), List.copyOf(results), query.page(), query.size(), total
-            );
+        ExternalBookSearchPage result = fetchWithSingleRetry(query);
+        if (cache.size() >= MAX_CACHE_ENTRIES) cache.clear();
+        cache.put(query, new CachedSearch(result, now.plus(cacheTtl)));
+        return result;
+    }
+
+    private ExternalBookSearchPage fetchWithSingleRetry(ExternalBookSearchQuery query) {
+        RestClientException firstFailure;
+        try {
+            return fetch(query);
         } catch (RestClientException exception) {
+            firstFailure = exception;
+        }
+        try {
+            return fetch(query);
+        } catch (RestClientException exception) {
+            exception.addSuppressed(firstFailure);
             throw new ExternalCatalogueException(
                     "Open Library is temporarily unavailable. Please retry or use manual entry.",
                     exception
             );
         }
+    }
+
+    private ExternalBookSearchPage fetch(ExternalBookSearchQuery query) {
+        int offset = (query.page() - 1) * query.size();
+        JsonNode root = client.get()
+                .uri(uriBuilder -> uriBuilder.path("/search.json")
+                        .queryParam("q", query.query())
+                        .queryParam("limit", query.size())
+                        .queryParam("offset", offset)
+                        .queryParam("fields", RESULT_FIELDS)
+                        .build())
+                .retrieve()
+                .body(JsonNode.class);
+
+        List<ExternalBookResult> results = new ArrayList<>();
+        for (JsonNode work : array(root, "docs")) {
+            JsonNode editions = work.path("editions").path("docs");
+            if (editions.isArray() && !editions.isEmpty()) {
+                for (JsonNode edition : editions) results.add(mapResult(work, edition));
+            } else {
+                results.add(mapResult(work, work));
+            }
+        }
+        long total = root == null ? 0 : root.path("numFound").asLong(0);
+        return new ExternalBookSearchPage(
+                source(), List.copyOf(results), query.page(), query.size(), total
+        );
     }
 
     private ExternalBookResult mapResult(JsonNode work, JsonNode edition) {
@@ -200,4 +240,6 @@ public class OpenLibraryBookMetadataProvider implements BookMetadataProvider {
         if (trimmed.matches("\\d{4}")) return trimmed + "-01-01";
         return null;
     }
+
+    private record CachedSearch(ExternalBookSearchPage page, Instant expiresAt) { }
 }

@@ -8,10 +8,12 @@ import com.akshara.api.library.dto.PersonalBookFile;
 import com.akshara.api.library.dto.PersonalBookResponse;
 import com.akshara.api.library.entity.PersonalBook;
 import com.akshara.api.library.exception.PersonalLibraryStorageException;
+import com.akshara.api.library.event.PersonalBookFileDeletionRequested;
 import com.akshara.api.library.repository.PersonalBookRepository;
 import com.akshara.api.user.entity.AppUser;
 import com.akshara.api.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,14 +37,17 @@ public class PersonalLibraryService {
     private final UserRepository userRepository;
     private final PersonalBookRepository personalBookRepository;
     private final Path storageRoot;
+    private final ApplicationEventPublisher eventPublisher;
 
     public PersonalLibraryService(
             UserRepository userRepository,
             PersonalBookRepository personalBookRepository,
+            ApplicationEventPublisher eventPublisher,
             @Value("${app.personal-library.storage-path:./data/personal-library}") String storagePath
     ) {
         this.userRepository = userRepository;
         this.personalBookRepository = personalBookRepository;
+        this.eventPublisher = eventPublisher;
         this.storageRoot = Path.of(storagePath).toAbsolutePath().normalize();
     }
 
@@ -106,17 +111,20 @@ public class PersonalLibraryService {
         return new PersonalBookFile(new FileSystemResource(path), book.getMediaType(), book.getOriginalFilename());
     }
 
+    @Transactional
     public void delete(String subject, Long bookId) {
         PersonalBook book = getOwnedBook(subject, bookId);
         personalBookRepository.delete(book);
-        deleteQuietly(resolveStoredFile(book.getStoredFilename()));
+        eventPublisher.publishEvent(new PersonalBookFileDeletionRequested(book.getStoredFilename()));
     }
 
     @Transactional
     public void deleteAllForUser(Long userId) {
         List<PersonalBook> books = personalBookRepository.findAllByUser_IdOrderByCreatedAtDesc(userId);
         personalBookRepository.deleteAll(books);
-        books.forEach(book -> deleteQuietly(resolveStoredFile(book.getStoredFilename())));
+        books.forEach(book -> eventPublisher.publishEvent(
+                new PersonalBookFileDeletionRequested(book.getStoredFilename())
+        ));
     }
 
     private PersonalBook getOwnedBook(String subject, Long bookId) {

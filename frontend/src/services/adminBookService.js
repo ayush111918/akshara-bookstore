@@ -2,6 +2,7 @@ import api from './api'
 
 export const BOOK_SOURCES = [
   { value: 'OPEN_LIBRARY', label: 'Open Library' },
+  { value: 'GOOGLE_BOOKS', label: 'Google Books (requires server key)' },
 ]
 
 export const BOOK_FORMATS = [
@@ -31,6 +32,7 @@ function toList(value) {
 function normalizeEdition(item, parent = {}) {
   const isbn = item.isbn ?? item.isbn13 ?? item.isbn10 ?? ''
   return {
+    source: item.source ?? parent.source ?? '',
     sourceId: item.sourceId ?? item.externalId ?? item.key ?? parent.sourceId ?? parent.externalId ?? parent.key ?? '',
     editionId: item.editionId ?? item.externalEditionId ?? item.key ?? '',
     title: item.title ?? parent.title ?? '',

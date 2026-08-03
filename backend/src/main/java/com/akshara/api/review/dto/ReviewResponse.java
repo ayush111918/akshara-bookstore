@@ -12,6 +12,8 @@ public record ReviewResponse(
         Integer rating,
         String headline,
         String content,
+        boolean verifiedPurchase,
+        boolean completedOnAkshara,
         Instant createdAt,
         Instant updatedAt
 ) {

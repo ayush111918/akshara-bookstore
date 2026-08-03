@@ -47,6 +47,7 @@ function AuthPage({ mode }) {
           <p className="eyebrow">Reader account</p>
           <h2>{isRegister ? 'Join Akshara' : 'Sign in'}</h2>
           {!isRegister && location.state?.sessionExpired && <p className="form-alert" role="status">Your session expired. Sign in again to continue safely.</p>}
+          {!isRegister && location.state?.roleChanged && <p className="auth-success-note" role="status">Your account permissions changed. Sign in again to refresh your access.</p>}
           {!isRegister && location.state?.accountDeleted && <p className="auth-success-note" role="status">Your account was deleted and sign-in access was disabled.</p>}
           {isRegister && (
             <label>Full name<input name="fullName" value={form.fullName} onChange={updateField} maxLength="100" required /></label>

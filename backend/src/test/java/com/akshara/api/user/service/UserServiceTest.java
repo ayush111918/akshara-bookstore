@@ -66,7 +66,7 @@ class UserServiceTest {
         assertThat(user.getDeletedAt()).isNotNull();
         verify(accountDataDeletionService).purgePrivateData(7L);
         verify(repository).save(user);
-        verify(auditService).record(7L, "reader@example.com", "ACCOUNT_DELETION", "SUCCESS",
+        verify(auditService).recordAfterCommit(7L, "reader@example.com", "ACCOUNT_DELETION", "SUCCESS",
                 "127.0.0.1", "test",
                 "Private reader data removed; account disabled and anonymized; order history retained");
     }

@@ -37,4 +37,13 @@ describe('AuthPage', () => {
     render(<MemoryRouter><AuthPage mode="register" /></MemoryRouter>)
     expect(screen.getByText(/No email verification is required/i)).toBeInTheDocument()
   })
+
+  it('explains when account permissions require a fresh token', () => {
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/login', state: { roleChanged: true } }]}>
+        <AuthPage mode="login" />
+      </MemoryRouter>,
+    )
+    expect(screen.getByText(/permissions changed/i)).toBeInTheDocument()
+  })
 })

@@ -26,6 +26,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_ISSUER: ${JWT_ISSUER:-akshara-api}
       BOOK_IMPORT_CONTACT: ${BOOK_IMPORT_CONTACT}
+      GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY:-}
       PERSONAL_LIBRARY_STORAGE: /app/data/personal-library
     volumes:
       - akshara_uploads:/app/data/personal-library

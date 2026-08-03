@@ -10,7 +10,10 @@ function AdminRoute({ children }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />
+    return <Navigate to="/login" state={{
+      from: location,
+      roleChanged: Boolean(localStorage.getItem('akshara.session.roleChanged')),
+    }} replace />
   }
 
   if (user?.role !== 'ADMIN') {

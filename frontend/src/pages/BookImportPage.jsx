@@ -81,7 +81,7 @@ function BookMetadataForm({ form, mode, onChange }) {
       <section className="admin-form-section admin-owned-section">
         <div className="admin-section-title"><span>03</span><div><h2>Akshara catalogue details</h2><p>Pricing, inventory, visibility, and curation always belong to Akshara.</p></div></div>
         <div className="admin-field-grid admin-field-grid-three">
-          <label>Selling price (₹) <input name="price" type="number" min="0" step="0.01" value={form.price} onChange={onChange} required /></label>
+          <label>Selling price (₹) <input name="price" type="number" min="0.01" step="0.01" value={form.price} onChange={onChange} required /></label>
           <label>Stock quantity <input name="stockQuantity" type="number" min="0" step="1" value={form.stockQuantity} onChange={onChange} required /></label>
           <label>Availability <select name="availabilityStatus" value={form.availabilityStatus} onChange={onChange}>{AVAILABILITY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
           <label className="span-two">SKU <input name="sku" value={form.sku} onChange={onChange} maxLength="100" placeholder="AKS-978…-PB" required /></label>
@@ -98,7 +98,7 @@ function BookMetadataForm({ form, mode, onChange }) {
 function BookImportPage() {
   const [mode, setMode] = useState('import')
   const [query, setQuery] = useState('')
-  const source = 'OPEN_LIBRARY'
+  const [source, setSource] = useState('OPEN_LIBRARY')
   const [results, setResults] = useState([])
   const [selectedIndex, setSelectedIndex] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -171,7 +171,7 @@ function BookImportPage() {
 
   function importPayload() {
     return {
-      source,
+      source: selected.source || source,
       sourceId: selected.sourceId,
       editionId: selected.editionId,
       title: form.title.trim(),
@@ -279,8 +279,8 @@ function BookImportPage() {
             <section className="admin-search-panel">
               <div><p className="eyebrow">Find a book</p><h2>Search by title, author, or ISBN</h2><p>Results are fetched through Akshara’s Spring Boot API and are not saved until you import one.</p></div>
               <form onSubmit={handleSearch} role="search">
-                <div className="admin-search-input"><i className="bi bi-search" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Try “Atomic Habits” or 9780735211292" aria-label="Book search" required /><span className="admin-source-label">Open Library</span><button type="submit" disabled={searching}>{searching ? <span className="spinner-border spinner-border-sm" /> : 'Search'}</button></div>
-                <small><i className="bi bi-info-circle" /> Metadata is retrieved through Akshara’s secured Open Library provider.</small>
+                <div className="admin-search-input"><i className="bi bi-search" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Try “Atomic Habits” or 9780735211292" aria-label="Book search" required /><select className="admin-source-label" value={source} onChange={(event) => setSource(event.target.value)} aria-label="Metadata source">{BOOK_SOURCES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><button type="submit" disabled={searching}>{searching ? <span className="spinner-border spinner-border-sm" /> : 'Search'}</button></div>
+                <small><i className="bi bi-info-circle" /> Metadata is retrieved through Akshara’s secured backend providers. Open Library is the default.</small>
               </form>
             </section>
 
@@ -290,7 +290,7 @@ function BookImportPage() {
                 {results.length > 0 ? <div className="external-result-grid">{results.map((result, index) => (
                   <article className={`external-book-card ${selectedIndex === index ? 'is-selected' : ''} ${result.alreadyImported ? 'is-imported' : ''}`} key={`${result.editionId || result.isbn13 || result.isbn10}-${index}`}>
                     <div className="external-cover">{result.coverImageUrl ? <img src={result.coverImageUrl} alt={`Cover of ${result.title}`} /> : <span>अ<small>No cover</small></span>}</div>
-                    <div className="external-book-copy"><div className="external-source"><span>{BOOK_SOURCES.find((item) => item.value === source)?.label}</span>{result.alreadyImported ? <strong>Already in catalogue</strong> : selectedIndex === index && <i className="bi bi-check-circle-fill" />}</div><h3>{titleFor(result)}</h3><p>{result.authors.join(', ') || 'Unknown author'}</p><dl><div><dt>ISBN</dt><dd>{result.isbn13 || result.isbn10 || 'Not supplied'}</dd></div><div><dt>Published</dt><dd>{result.publicationDate || 'Unknown'}</dd></div><div><dt>Publisher</dt><dd>{result.publisher || 'Unknown'}</dd></div><div><dt>Pages</dt><dd>{result.pageCount || '—'}</dd></div></dl><button type="button" disabled={result.alreadyImported} onClick={() => selectEdition(result, index)}>{result.alreadyImported ? 'Duplicate ISBN' : selectedIndex === index ? 'Edition selected' : 'Select this edition'} <i className="bi bi-arrow-right" /></button></div>
+                    <div className="external-book-copy"><div className="external-source"><span>{BOOK_SOURCES.find((item) => item.value === (result.source || source))?.label}</span>{result.alreadyImported ? <strong>Already in catalogue</strong> : selectedIndex === index && <i className="bi bi-check-circle-fill" />}</div><h3>{titleFor(result)}</h3><p>{result.authors.join(', ') || 'Unknown author'}</p><dl><div><dt>ISBN</dt><dd>{result.isbn13 || result.isbn10 || 'Not supplied'}</dd></div><div><dt>Published</dt><dd>{result.publicationDate || 'Unknown'}</dd></div><div><dt>Publisher</dt><dd>{result.publisher || 'Unknown'}</dd></div><div><dt>Pages</dt><dd>{result.pageCount || '—'}</dd></div></dl><button type="button" disabled={result.alreadyImported} onClick={() => selectEdition(result, index)}>{result.alreadyImported ? 'Duplicate ISBN' : selectedIndex === index ? 'Edition selected' : 'Select this edition'} <i className="bi bi-arrow-right" /></button></div>
                   </article>
                 ))}</div> : <div className="admin-empty-results"><i className="bi bi-journal-x" /><h3>No matching editions</h3><p>Try an ISBN, fewer words, or the fallback source.</p></div>}
               </section>

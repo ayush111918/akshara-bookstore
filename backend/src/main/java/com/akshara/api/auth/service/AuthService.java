@@ -66,7 +66,7 @@ public class AuthService {
         JwtService.GeneratedToken token =
                 jwtService.generateToken(savedUser);
 
-        auditService.record(savedUser.getId(), savedUser.getEmail(), "ACCOUNT_REGISTERED",
+        auditService.recordAfterCommit(savedUser.getId(), savedUser.getEmail(), "ACCOUNT_REGISTERED",
                 "SUCCESS", ipAddress, userAgent, "Reader account created");
 
         return new AuthResponse(
@@ -97,7 +97,7 @@ public class AuthService {
         JwtService.GeneratedToken token =
                 jwtService.generateToken(user);
 
-        auditService.record(user.getId(), user.getEmail(), "LOGIN", "SUCCESS",
+        auditService.recordAfterCommit(user.getId(), user.getEmail(), "LOGIN", "SUCCESS",
                 ipAddress, userAgent, "Reader signed in");
 
         return new AuthResponse(

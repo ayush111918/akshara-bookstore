@@ -4,6 +4,7 @@ import com.akshara.api.book.entity.BookFormat;
 import com.akshara.api.common.exception.InvalidRequestException;
 import com.akshara.api.common.exception.ResourceNotFoundException;
 import com.akshara.api.library.entity.PersonalBook;
+import com.akshara.api.library.event.PersonalBookFileDeletionRequested;
 import com.akshara.api.library.repository.PersonalBookRepository;
 import com.akshara.api.user.entity.AppUser;
 import com.akshara.api.user.repository.UserRepository;
@@ -15,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,13 +40,18 @@ class PersonalLibraryServiceTest {
     PersonalBookRepository personalBookRepository;
 
     @Mock
+    ApplicationEventPublisher eventPublisher;
+
+    @Mock
     AppUser user;
 
     private PersonalLibraryService service;
 
     @BeforeEach
     void setUp() {
-        service = new PersonalLibraryService(userRepository, personalBookRepository, storageDirectory.toString());
+        service = new PersonalLibraryService(
+                userRepository, personalBookRepository, eventPublisher, storageDirectory.toString()
+        );
     }
 
     @Test
@@ -98,6 +105,22 @@ class PersonalLibraryServiceTest {
         assertThatThrownBy(() -> service.getFile("1", 9L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Personal book with ID 9 was not found");
+    }
+
+    @Test
+    void deleteShouldDeferPhysicalFileRemovalUntilTheTransactionCommits() {
+        authenticate();
+        when(user.getId()).thenReturn(1L);
+        PersonalBook book = new PersonalBook(
+                user, "Private Book", null, BookFormat.PDF,
+                "private.pdf", "stored.pdf", "application/pdf", 12L
+        );
+        when(personalBookRepository.findByIdAndUser_Id(9L, 1L)).thenReturn(Optional.of(book));
+
+        service.delete("1", 9L);
+
+        verify(personalBookRepository).delete(book);
+        verify(eventPublisher).publishEvent(new PersonalBookFileDeletionRequested("stored.pdf"));
     }
 
     private void authenticate() {

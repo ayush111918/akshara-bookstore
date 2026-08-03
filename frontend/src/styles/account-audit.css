@@ -1,0 +1,46 @@
+.password-field { position: relative; display: block; }
+.password-field input { width: 100%; padding-right: 3rem; }
+.password-field button { position: absolute; right: .55rem; top: 50%; transform: translateY(-50%); border: 0; background: transparent; color: var(--ink, #17362f); padding: .4rem; }
+.auth-privacy-note { display: flex; gap: .55rem; color: #667772; font-size: .82rem; line-height: 1.5; }
+.auth-success-note { padding: .75rem; border-radius: 8px; background: #dceee6; color: #15594b; }
+.account-layout { max-width: 920px; display: grid; gap: 1.5rem; }
+.account-layout > header h1, .audit-page header h1, .not-found-page h1 { font-family: var(--font-display); color: #12352e; }
+.account-card, .account-danger { background: #fffdf9; border: 1px solid #ddd1bf; border-radius: 20px; padding: 2rem; }
+.account-card { display: flex; gap: 1.5rem; align-items: center; }
+.account-avatar { width: 78px; height: 78px; border-radius: 50%; display: grid; place-items: center; background: #15594b; color: white; font-size: 1.4rem; font-weight: 700; }
+.account-card > div:last-child { display: grid; grid-template-columns: auto 1fr; gap: .35rem 1.5rem; }
+.account-card span { color: #71807c; }
+.account-danger { border-color: #e7b7ad; }
+.account-danger form { max-width: 520px; display: grid; gap: 1rem; margin-top: 1.25rem; }
+.account-danger label { display: grid; gap: .35rem; }
+.account-danger input { border: 1px solid #d5c8b5; border-radius: 9px; padding: .75rem; }
+.account-delete-button { background: #9b3329; color: white; justify-self: start; }
+.audit-page header { margin-bottom: 2rem; }
+.audit-table-wrap { overflow-x: auto; border: 1px solid #ddd1bf; border-radius: 16px; background: #fffdf9; }
+.audit-table-wrap table { width: 100%; border-collapse: collapse; min-width: 900px; }
+.audit-table-wrap th, .audit-table-wrap td { padding: .9rem 1rem; border-bottom: 1px solid #eee4d6; text-align: left; font-size: .86rem; }
+.audit-table-wrap th { color: #536963; background: #f8f3e9; }
+.audit-outcome { font-size: .72rem; font-weight: 800; padding: .25rem .45rem; border-radius: 999px; }
+.audit-outcome.success { background: #dceee6; color: #15594b; }
+.audit-outcome.failure { background: #f8dfda; color: #9b3329; }
+.audit-pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.25rem; }
+.audit-pagination button { border: 1px solid #cfc3b1; background: #fffdf9; border-radius: 8px; padding: .5rem .8rem; }
+.not-found-page { min-height: 65vh; display: grid; place-items: center; text-align: center; }
+.not-found-page > div { max-width: 620px; }
+.not-found-page > div > span { display: block; font-family: var(--font-display); font-size: clamp(5rem, 16vw, 10rem); color: #e5d9c6; line-height: .8; }
+@media (max-width: 600px) { .account-card { align-items: flex-start; flex-direction: column; } .account-card > div:last-child { grid-template-columns: 1fr; } }
+.review-trust-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.35rem 0;
+}
+
+.review-trust-badges > span {
+  border: 1px solid rgba(16, 77, 64, 0.2);
+  border-radius: 999px;
+  color: var(--green-700, #155647);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+}

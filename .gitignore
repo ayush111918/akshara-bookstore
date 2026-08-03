@@ -73,3 +73,6 @@ application-local.yaml
 Thumbs.db
 backend/data/personal-library/
 docs/
+
+# Local presentation notes
+DEMO_CHECKLIST.md

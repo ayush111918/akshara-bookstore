@@ -1,0 +1,113 @@
+/* Private reading notebook */
+.reading-notebook {
+  position: sticky;
+  top: 6rem;
+  max-height: calc(100vh - 7rem);
+  padding: 1.35rem;
+  overflow-y: auto;
+  background: #fffdf9;
+  border: 1px solid #ddcfbb;
+  border-radius: 17px;
+}
+
+.reading-notebook-heading h2 {
+  margin: 0.4rem 0;
+  color: #173e34;
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  font-weight: 500;
+}
+
+.reading-notebook-heading > p:last-child {
+  color: #74817c;
+  font-size: 0.86rem;
+}
+
+.reading-annotation-form {
+  display: grid;
+  margin: 1rem 0;
+  padding: 1rem 0;
+  gap: 0.7rem;
+  border-top: 1px solid #e5dbcc;
+  border-bottom: 1px solid #e5dbcc;
+}
+
+.reading-annotation-form > div {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.reading-annotation-form label { flex: 1; }
+
+.reading-annotation-form textarea {
+  min-height: 110px;
+  resize: vertical;
+  text-transform: none;
+}
+
+.reading-annotation-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.reading-annotation-list article {
+  padding: 0.9rem;
+  background: #f6f1e8;
+  border-left: 4px solid #226855;
+  border-radius: 8px;
+}
+
+.reading-annotation-list article.annotation-quote { border-left-color: #d4861b; }
+.reading-annotation-list article.annotation-bookmark { border-left-color: #617f91; }
+
+.reading-annotation-list article > div,
+.reading-annotation-list footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.reading-annotation-list article > div span {
+  color: #9f5d08;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.reading-annotation-list article > div small { color: #6e7c76; }
+
+.reading-annotation-list article p {
+  margin: 0.65rem 0;
+  color: #25443b;
+  white-space: pre-wrap;
+}
+
+.reading-annotation-list footer {
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.reading-annotation-list footer button {
+  padding: 0;
+  color: #285e50;
+  font-size: 0.75rem;
+  background: transparent;
+  border: 0;
+}
+
+.reading-annotation-list footer button:last-child { color: #a43b2f; }
+
+.reading-notes-empty,
+.reading-notes-loading {
+  padding: 2rem 1rem;
+  color: #718079;
+  text-align: center;
+}
+
+.reading-notes-empty i {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #d4861b;
+  font-size: 2rem;
+}

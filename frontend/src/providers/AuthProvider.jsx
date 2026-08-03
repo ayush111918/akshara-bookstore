@@ -15,6 +15,12 @@ function AuthProvider({ children }) {
     getCurrentUser()
       .then((currentUser) => {
         if (!active) return
+        if (currentUser.role !== initialSession.user?.role) {
+          clearStoredSession()
+          localStorage.setItem('akshara.session.roleChanged', 'true')
+          setUser(null)
+          return
+        }
         setUser(currentUser)
         storeSession({ ...initialSession, user: currentUser })
       })
@@ -42,6 +48,7 @@ function AuthProvider({ children }) {
   const acceptSession = useCallback((session) => {
     storeSession(session)
     localStorage.removeItem('akshara.session.expired')
+    localStorage.removeItem('akshara.session.roleChanged')
     setUser(session.user)
     return session.user
   }, [])
@@ -57,6 +64,7 @@ function AuthProvider({ children }) {
   const logout = useCallback(() => {
     clearStoredSession()
     localStorage.removeItem('akshara.session.expired')
+    localStorage.removeItem('akshara.session.roleChanged')
     setUser(null)
   }, [])
 

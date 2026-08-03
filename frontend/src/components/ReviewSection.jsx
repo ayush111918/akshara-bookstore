@@ -8,6 +8,7 @@ import {
   getBookReviews,
   updateReview,
 } from '../services/readerService'
+import ReviewTrustBadges from './ReviewTrustBadges'
 
 function ReviewSection({ bookId }) {
   const { user } = useAuth()
@@ -159,6 +160,7 @@ function ReviewSection({ bookId }) {
                   <strong>{review.readerName}</strong>
                   <span>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
                 </div>
+                <ReviewTrustBadges review={review} />
                 {review.headline && <h3>{review.headline}</h3>}
                 <p>{review.content}</p>
                 <small>{new Date(review.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</small>

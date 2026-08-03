@@ -39,6 +39,12 @@ public interface OrderItemRepository
             Long bookId
     );
 
+    boolean existsByOrder_User_IdAndOrder_StatusAndBookEdition_Book_Id(
+            Long userId,
+            OrderStatus status,
+            Long bookId
+    );
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
             update OrderItem item

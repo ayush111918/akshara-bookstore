@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getApiErrorMessage } from '../services/api'
+import ReadingEntryCard from '../components/ReadingEntryCard'
+import ReadingNotebook from '../components/ReadingNotebook'
+import ReadingOverview from '../components/ReadingOverview'
+import { READING_FILTERS } from '../utils/readingJourney'
 import {
   createReadingAnnotation,
   deleteReadingAnnotation,
@@ -11,40 +15,7 @@ import {
   updateReadingGoal,
   updateReadingProgress,
 } from '../services/readerService'
-import { getCoverTone, getTitleMonogram } from '../utils/bookPresentation'
-
-const STATUS_OPTIONS = [
-  { value: 'NOT_STARTED', label: 'Want to read' },
-  { value: 'READING', label: 'Reading' },
-  { value: 'PAUSED', label: 'Paused' },
-  { value: 'COMPLETED', label: 'Completed' },
-]
-
-const FILTERS = [
-  { value: 'ALL', label: 'All' },
-  ...STATUS_OPTIONS,
-]
-
 const EMPTY_ANNOTATION = { type: 'NOTE', content: '', pageNumber: '' }
-
-function statusLabel(status) {
-  return STATUS_OPTIONS.find((option) => option.value === status)?.label || status
-}
-
-function ReadingCover({ entry }) {
-  const [failed, setFailed] = useState(false)
-  if (entry.coverImageUrl && !failed) {
-    return <img src={entry.coverImageUrl} alt={`Cover of ${entry.title}`} onError={() => setFailed(true)} />
-  }
-  return <div className={`reading-cover-fallback cover-tone-${getCoverTone({ id: entry.id, title: entry.title })}`}><span>अ</span><strong>{getTitleMonogram(entry.title)}</strong></div>
-}
-
-function formatDate(value) {
-  if (!value) return 'Not recorded'
-  return new Date(`${value}T00:00:00`).toLocaleDateString('en-IN', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  })
-}
 
 function ReadingJourneyPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -261,18 +232,7 @@ function ReadingJourneyPage() {
 
         {!loading && !error && dashboard && (
           <>
-            <section className="reading-stat-grid" aria-label="Reading statistics">
-              <div><span>Current streak</span><strong>{dashboard.statistics.currentStreak}</strong><small>days</small></div>
-              <div><span>Reading now</span><strong>{dashboard.statistics.currentlyReading}</strong><small>books</small></div>
-              <div><span>Completed</span><strong>{dashboard.statistics.completedThisYear}</strong><small>this year</small></div>
-              <div><span>Pages logged</span><strong>{dashboard.statistics.pagesReadThisYear}</strong><small>this year</small></div>
-              <div><span>Longest streak</span><strong>{dashboard.statistics.longestStreak}</strong><small>days</small></div>
-            </section>
-
-            <section className="reading-goal-card">
-              <div><p className="eyebrow">{dashboard.goal.year} reading goal</p><h2>{dashboard.goal.completedBooks} of {dashboard.goal.targetBooks} books completed</h2><div className="reading-goal-track"><span style={{ width: `${dashboard.goal.progressPercentage}%` }} /></div></div>
-              <form onSubmit={saveGoal}><label>Target<input type="number" min="1" max="1000" value={goalTarget} onChange={(event) => setGoalTarget(event.target.value)} required /></label><button className="btn btn-ink" type="submit">Update goal</button></form>
-            </section>
+            <ReadingOverview dashboard={dashboard} goalTarget={goalTarget} onGoalChange={(event) => setGoalTarget(event.target.value)} onGoalSubmit={saveGoal} />
 
             {message && <p className="reading-journey-message" role="status">{message}</p>}
 
@@ -281,52 +241,22 @@ function ReadingJourneyPage() {
             ) : (
               <>
                 <div className="reading-filter-bar" role="group" aria-label="Filter reading journey">
-                  {FILTERS.map((item) => <button type="button" className={filter === item.value ? 'is-active' : ''} onClick={() => setFilter(item.value)} key={item.value}>{item.label}</button>)}
+                  {READING_FILTERS.map((item) => {
+                    const count = item.value === 'ALL' ? dashboard.entries.length : dashboard.entries.filter((entry) => entry.status === item.value).length
+                    return <button type="button" className={`reading-filter-${item.value.toLowerCase()}${filter === item.value ? ' is-active' : ''}`} onClick={() => setFilter(item.value)} key={item.value}>{item.label}<span>{count}</span></button>
+                  })}
                 </div>
 
                 <div className="reading-workspace">
                   <div className="reading-entry-list">
                     {visibleEntries.map((entry) => {
                       const draft = drafts[entry.id] || {}
-                      return (
-                        <article className={`reading-entry-card${selectedId === entry.id ? ' is-selected' : ''}`} key={entry.id}>
-                          <button className="reading-entry-select" type="button" onClick={() => chooseEntry(entry.id)}>
-                            <span className="reading-entry-cover"><ReadingCover entry={entry} /></span>
-                            <span className="reading-entry-copy"><small>{entry.sourceType === 'PERSONAL_UPLOAD' ? 'Private upload' : 'From My Books'}</small><strong>{entry.title}</strong><span>{entry.author || statusLabel(entry.status)}</span></span>
-                            <span className={`reading-status status-${entry.status.toLowerCase()}`}>{statusLabel(entry.status)}</span>
-                          </button>
-                          <div className="reading-progress-track" aria-label={`${entry.progressPercentage}% complete`}><span style={{ width: `${entry.progressPercentage}%` }} /></div>
-                          <div className="reading-progress-summary"><span>{entry.currentPage}{entry.totalPages ? ` / ${entry.totalPages} pages` : ' pages logged'}</span><strong>{entry.progressPercentage}%</strong></div>
-                          <form className="reading-progress-form" onSubmit={(event) => saveProgress(event, entry)}>
-                            <label>Status<select value={draft.status || entry.status} onChange={(event) => updateDraft(entry.id, 'status', event.target.value)}>{STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
-                            <label>Current page<input type="number" min="0" value={draft.currentPage ?? entry.currentPage} onChange={(event) => updateDraft(entry.id, 'currentPage', event.target.value)} required /></label>
-                            <label>Total pages<input type="number" min="1" value={draft.totalPages ?? ''} onChange={(event) => updateDraft(entry.id, 'totalPages', event.target.value)} placeholder="Optional" /></label>
-                            <button className="btn btn-ink" disabled={busyId === entry.id} type="submit">{busyId === entry.id ? 'Saving…' : 'Save progress'}</button>
-                          </form>
-                          <div className="reading-entry-meta"><span><i className="bi bi-calendar3" /> Started {formatDate(entry.startedOn)}</span><span><i className="bi bi-sticky" /> {entry.annotationCount} private items</span>{entry.reviewAvailable && <Link to={`/books/${entry.bookId}#reviews`}>Write your review <i className="bi bi-arrow-right" /></Link>}<button type="button" disabled={busyId === entry.id} onClick={() => removeEntry(entry)}>Remove</button></div>
-                        </article>
-                      )
+                      return <ReadingEntryCard key={entry.id} entry={entry} draft={draft} selected={selectedId === entry.id} busy={busyId === entry.id} onChoose={() => chooseEntry(entry.id)} onDraftChange={(field, value) => updateDraft(entry.id, field, value)} onSave={(event) => saveProgress(event, entry)} onRemove={() => removeEntry(entry)} />
                     })}
                     {visibleEntries.length === 0 && <div className="reading-filter-empty"><h2>No books in this shelf</h2><p>Choose another reading status.</p></div>}
                   </div>
 
-                  <aside className="reading-notebook">
-                    {selectedEntry ? (
-                      <>
-                        <div className="reading-notebook-heading"><p className="eyebrow">Private notebook</p><h2>{selectedEntry.title}</h2><p>Only you can see these notes, quotations and bookmarks.</p></div>
-                        <form className="reading-annotation-form" onSubmit={saveAnnotation}>
-                          <div><label>Type<select value={annotationDraft.type} onChange={(event) => setAnnotationDraft((current) => ({ ...current, type: event.target.value }))}><option value="NOTE">Note</option><option value="QUOTE">Quotation</option><option value="BOOKMARK">Bookmark</option></select></label><label>Page<input type="number" min="1" max={selectedEntry.totalPages || undefined} value={annotationDraft.pageNumber} onChange={(event) => setAnnotationDraft((current) => ({ ...current, pageNumber: event.target.value }))} placeholder="Optional" /></label></div>
-                          <textarea minLength="1" maxLength="3000" required value={annotationDraft.content} onChange={(event) => setAnnotationDraft((current) => ({ ...current, content: event.target.value }))} placeholder={annotationDraft.type === 'QUOTE' ? 'Save a passage that stayed with you…' : annotationDraft.type === 'BOOKMARK' ? 'Why are you saving this place?' : 'Write a private thought…'} />
-                          <div><button className="btn btn-ink" disabled={annotationBusy} type="submit">{editingAnnotationId ? 'Update' : 'Save privately'}</button>{editingAnnotationId && <button type="button" className="text-button" onClick={() => { setEditingAnnotationId(null); setAnnotationDraft(EMPTY_ANNOTATION) }}>Cancel</button>}</div>
-                        </form>
-                        {annotationsLoading && <div className="reading-notes-loading"><span className="spinner-border spinner-border-sm" /> Loading notebook…</div>}
-                        {!annotationsLoading && annotations.length === 0 && <div className="reading-notes-empty"><i className="bi bi-journal-text" /><p>Your notebook is empty.</p></div>}
-                        <div className="reading-annotation-list">
-                          {annotations.map((annotation) => <article key={annotation.id} className={`annotation-${annotation.type.toLowerCase()}`}><div><span>{annotation.type === 'QUOTE' ? 'Quotation' : annotation.type === 'BOOKMARK' ? 'Bookmark' : 'Note'}</span>{annotation.pageNumber && <small>Page {annotation.pageNumber}</small>}</div><p>{annotation.content}</p><footer><button type="button" onClick={() => editAnnotation(annotation)}>Edit</button><button type="button" disabled={annotationBusy} onClick={() => removeAnnotation(annotation)}>Delete</button></footer></article>)}
-                        </div>
-                      </>
-                    ) : <div className="reading-notes-empty"><i className="bi bi-arrow-left" /><p>Select a book to open its private notebook.</p></div>}
-                  </aside>
+                  <ReadingNotebook entry={selectedEntry} draft={annotationDraft} setDraft={setAnnotationDraft} editingId={editingAnnotationId} busy={annotationBusy} loading={annotationsLoading} annotations={annotations} onSave={saveAnnotation} onEdit={editAnnotation} onDelete={removeAnnotation} onCancel={() => { setEditingAnnotationId(null); setAnnotationDraft(EMPTY_ANNOTATION) }} />
                 </div>
               </>
             )}

@@ -1,128 +1,75 @@
 package com.akshara.api.book.service;
 
-import com.akshara.api.book.dto.AuthorResponse;
-import com.akshara.api.book.dto.BookEditionRequest;
-import com.akshara.api.book.dto.BookEditionResponse;
+import com.akshara.api.book.dto.BookPageResponse;
 import com.akshara.api.book.dto.BookRequest;
 import com.akshara.api.book.dto.BookResponse;
-import com.akshara.api.book.dto.CategoryResponse;
-import com.akshara.api.book.dto.InventoryRequest;
-import com.akshara.api.book.dto.InventoryResponse;
-import com.akshara.api.book.dto.PublisherResponse;
-import com.akshara.api.book.entity.Author;
-import com.akshara.api.book.entity.AvailabilityStatus;
-import com.akshara.api.book.entity.Book;
-import com.akshara.api.book.entity.BookAuthor;
-import com.akshara.api.book.entity.BookCategory;
-import com.akshara.api.book.entity.BookEdition;
-import com.akshara.api.book.entity.BookFormat;
-import com.akshara.api.book.entity.Category;
-import com.akshara.api.book.entity.Inventory;
-import com.akshara.api.book.entity.Publisher;
-import com.akshara.api.book.repository.AuthorRepository;
-import com.akshara.api.book.repository.BookAuthorRepository;
-import com.akshara.api.book.repository.BookCategoryRepository;
-import com.akshara.api.book.repository.BookEditionRepository;
-import com.akshara.api.book.repository.BookRepository;
-import com.akshara.api.book.repository.CategoryRepository;
-import com.akshara.api.book.repository.PublisherRepository;
-import com.akshara.api.common.exception.DuplicateResourceException;
-import com.akshara.api.common.exception.ResourceNotFoundException;
-import com.akshara.api.cart.repository.CartItemRepository;
-import com.akshara.api.order.repository.OrderItemRepository;
-import com.akshara.api.review.repository.ReviewRepository;
-import com.akshara.api.wishlist.repository.WishlistItemRepository;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import com.akshara.api.book.dto.BookPageResponse;
 import com.akshara.api.book.dto.BookSearchCriteria;
 import com.akshara.api.book.dto.BookSort;
+import com.akshara.api.book.dto.InventoryRequest;
+import com.akshara.api.book.dto.InventoryResponse;
+import com.akshara.api.book.entity.Author;
+import com.akshara.api.book.entity.Book;
+import com.akshara.api.book.entity.Category;
+import com.akshara.api.book.entity.Publisher;
+import com.akshara.api.book.repository.BookRepository;
 import com.akshara.api.book.specification.BookSpecifications;
+import com.akshara.api.common.exception.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import com.akshara.api.book.repository.InventoryRepository;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
 public class BookService {
 
-    private final BookRepository bookRepository;
-    private final AuthorRepository authorRepository;
-    private final CategoryRepository categoryRepository;
-    private final PublisherRepository publisherRepository;
-    private final BookAuthorRepository bookAuthorRepository;
-    private final BookCategoryRepository bookCategoryRepository;
-    private final BookEditionRepository bookEditionRepository;
-    private final InventoryRepository inventoryRepository;
-    private final CartItemRepository cartItemRepository;
-    private final WishlistItemRepository wishlistItemRepository;
-    private final ReviewRepository reviewRepository;
-    private final OrderItemRepository orderItemRepository;
+    private final BookRepository books;
+    private final BookReferenceResolver references;
+    private final BookRequestValidator validator;
+    private final BookRelationshipManager relationships;
+    private final BookEditionManager editions;
+    private final BookInventoryManager inventory;
+    private final BookResponseMapper mapper;
+    private final BookDeletionManager deletion;
 
     public BookService(
-            BookRepository bookRepository,
-            AuthorRepository authorRepository,
-            CategoryRepository categoryRepository,
-            PublisherRepository publisherRepository,
-            BookAuthorRepository bookAuthorRepository,
-            BookCategoryRepository bookCategoryRepository,
-            BookEditionRepository bookEditionRepository,
-            InventoryRepository inventoryRepository,
-            CartItemRepository cartItemRepository,
-            WishlistItemRepository wishlistItemRepository,
-            ReviewRepository reviewRepository,
-            OrderItemRepository orderItemRepository
+            BookRepository books,
+            BookReferenceResolver references,
+            BookRequestValidator validator,
+            BookRelationshipManager relationships,
+            BookEditionManager editions,
+            BookInventoryManager inventory,
+            BookResponseMapper mapper,
+            BookDeletionManager deletion
     ) {
-        this.bookRepository = bookRepository;
-        this.authorRepository = authorRepository;
-        this.categoryRepository = categoryRepository;
-        this.publisherRepository = publisherRepository;
-        this.bookAuthorRepository = bookAuthorRepository;
-        this.bookCategoryRepository = bookCategoryRepository;
-        this.bookEditionRepository = bookEditionRepository;
-        this.inventoryRepository = inventoryRepository;
-        this.cartItemRepository = cartItemRepository;
-        this.wishlistItemRepository = wishlistItemRepository;
-        this.reviewRepository = reviewRepository;
-        this.orderItemRepository = orderItemRepository;
+        this.books = books;
+        this.references = references;
+        this.validator = validator;
+        this.relationships = relationships;
+        this.editions = editions;
+        this.inventory = inventory;
+        this.mapper = mapper;
+        this.deletion = deletion;
     }
 
     @Transactional
     public BookResponse create(BookRequest request) {
-        validateSupportedFormats(request.editions());
-        List<Author> authors = findAuthors(request.authorIds());
-        List<Category> categories = findCategories(
-                request.categoryIds()
-        );
-
-        Map<Long, Publisher> publishers = findPublishers(
-                request.editions()
-        );
-
-        validateIsbnUniqueness(request.editions(), null);
-        validateSkuUniqueness(request.editions(), null);
+        validator.validate(request.editions(), null);
+        List<Author> authors = references.authors(request.authorIds());
+        List<Category> categories = references.categories(request.categoryIds());
+        Map<Long, Publisher> publishers = references.publishers(request.editions());
 
         Book book = new Book(request.title().trim());
-        applyBookFields(book, request);
-
-        Book savedBook = bookRepository.save(book);
-
-        saveAuthorRelationships(savedBook, authors);
-        saveCategoryRelationships(savedBook, categories);
-        createEditions(savedBook, request.editions(), publishers);
-
-        return toResponse(savedBook);
+        applyFields(book, request);
+        book = books.save(book);
+        relationships.create(book, authors, categories);
+        editions.create(book, request.editions(), publishers, null);
+        return mapper.response(book);
     }
 
     @Transactional
@@ -132,55 +79,38 @@ public class BookService {
             String externalWorkId,
             String externalEditionId
     ) {
-        validateSupportedFormats(request.editions());
-        List<Author> authors = findAuthors(request.authorIds());
-        List<Category> categories = findCategories(request.categoryIds());
-        Map<Long, Publisher> publishers = findPublishers(request.editions());
-        validateIsbnUniqueness(request.editions(), null);
-        validateSkuUniqueness(request.editions(), null);
+        validator.validate(request.editions(), null);
+        List<Author> authors = references.authors(request.authorIds());
+        List<Category> categories = references.categories(request.categoryIds());
+        Map<Long, Publisher> publishers = references.publishers(request.editions());
 
-        String source = normalizeOptional(metadataSource);
-        String workId = normalizeOptional(externalWorkId);
-        Book book = source == null || workId == null
-                ? null
-                : bookRepository.findByMetadataSourceAndExternalWorkId(
-                        source, workId
-                ).orElse(null);
-
+        String source = validator.normalizeOptional(metadataSource);
+        String workId = validator.normalizeOptional(externalWorkId);
+        Book book = source == null || workId == null ? null
+                : books.findByMetadataSourceAndExternalWorkId(source, workId).orElse(null);
         if (book == null) {
             book = new Book(request.title().trim());
             book.setMetadataSource(source);
             book.setExternalWorkId(workId);
-            applyBookFields(book, request);
-            book = bookRepository.save(book);
-            saveAuthorRelationships(book, authors);
-            saveCategoryRelationships(book, categories);
+            applyFields(book, request);
+            book = books.save(book);
+            relationships.create(book, authors, categories);
         } else {
-            applyBookFields(book, request);
-            bookRepository.save(book);
-            replaceAuthorRelationships(book, authors);
-            replaceCategoryRelationships(book, categories);
+            applyFields(book, request);
+            books.save(book);
+            relationships.replace(book, authors, categories);
         }
-
-        createEditions(
+        editions.create(
                 book, request.editions(), publishers,
-                normalizeOptional(externalEditionId)
+                validator.normalizeOptional(externalEditionId)
         );
-        return toResponse(book);
+        return mapper.response(book);
     }
 
     public List<BookResponse> getAll() {
-        return bookRepository
-                .findAll(
-                        Sort.by(Sort.Direction.ASC, "title")
-                                .and(Sort.by(
-                                        Sort.Direction.ASC,
-                                        "id"
-                                ))
-                )
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        return books.findAll(Sort.by(Sort.Direction.ASC, "title").and(
+                        Sort.by(Sort.Direction.ASC, "id")))
+                .stream().map(mapper::response).toList();
     }
 
     public BookPageResponse search(
@@ -189,785 +119,82 @@ public class BookService {
             int size,
             BookSort sort
     ) {
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                createSort(sort)
-        );
-
-        Page<Book> result = bookRepository.findAll(
-                BookSpecifications.withCriteria(criteria),
-                pageable
-        );
-
-        List<BookResponse> content = result.getContent()
-                .stream()
-                .map(this::toResponse)
-                .toList();
-
+        Pageable pageable = PageRequest.of(page, size, createSort(sort));
+        Page<Book> result = books.findAll(BookSpecifications.withCriteria(criteria), pageable);
+        List<BookResponse> content = result.getContent().stream().map(mapper::response).toList();
         return new BookPageResponse(
-                content,
-                result.getNumber(),
-                result.getSize(),
-                result.getTotalElements(),
-                result.getTotalPages(),
-                result.isFirst(),
-                result.isLast()
+                content, result.getNumber(), result.getSize(), result.getTotalElements(),
+                result.getTotalPages(), result.isFirst(), result.isLast()
         );
     }
 
     public BookResponse getById(Long id) {
-        return toResponse(findBookById(id));
+        return mapper.response(find(id));
     }
 
     @Transactional
-    public BookResponse update(
-            Long id,
-            BookRequest request
-    ) {
-        Book book = findBookById(id);
-        validateSupportedFormats(request.editions());
+    public BookResponse update(Long id, BookRequest request) {
+        Book book = find(id);
+        validator.validate(request.editions(), id);
+        List<Author> authors = references.authors(request.authorIds());
+        List<Category> categories = references.categories(request.categoryIds());
+        Map<Long, Publisher> publishers = references.publishers(request.editions());
 
-        List<Author> authors = findAuthors(request.authorIds());
-        List<Category> categories = findCategories(
-                request.categoryIds()
-        );
-
-        Map<Long, Publisher> publishers = findPublishers(
-                request.editions()
-        );
-
-        validateIsbnUniqueness(request.editions(), id);
-        validateSkuUniqueness(request.editions(), id);
-
-        applyBookFields(book, request);
-        bookRepository.save(book);
-
-        replaceAuthorRelationships(book, authors);
-        replaceCategoryRelationships(book, categories);
-        replaceEditions(book, request.editions(), publishers);
-
-        return toResponse(book);
+        applyFields(book, request);
+        books.save(book);
+        relationships.replace(book, authors, categories);
+        editions.replace(book, request.editions(), publishers);
+        return mapper.response(book);
     }
 
     @Transactional
     public BookResponse updateFeatured(Long id, boolean featured) {
-        Book book = findBookById(id);
+        Book book = find(id);
         book.setFeatured(featured);
-        bookRepository.save(book);
-        return toResponse(book);
+        books.save(book);
+        return mapper.response(book);
     }
 
     @Transactional
-    public InventoryResponse updateInventory(
-            Long editionId,
-            InventoryRequest request
-    ) {
-        Inventory inventory = findInventoryForUpdate(editionId);
-        rejectUnsupportedDigitalSale(
-                inventory.getBookEdition().getFormat(), request.active()
-        );
-        inventory.setPrice(request.price());
-        inventory.setStockQuantity(request.stockQuantity());
-        inventory.setAvailabilityStatus(normalizeAvailability(
-                request.stockQuantity(), request.availabilityStatus()
-        ));
-        inventory.setActive(request.active());
-        return toInventoryResponse(inventoryRepository.save(inventory));
+    public InventoryResponse updateInventory(Long editionId, InventoryRequest request) {
+        return inventory.update(editionId, request);
     }
 
     @Transactional
-    public InventoryResponse restockInventory(
-            Long editionId,
-            int quantity
-    ) {
-        Inventory inventory = findInventoryForUpdate(editionId);
-        inventory.increaseStock(quantity);
-        return toInventoryResponse(inventoryRepository.save(inventory));
+    public InventoryResponse restockInventory(Long editionId, int quantity) {
+        return inventory.restock(editionId, quantity);
     }
 
     @Transactional
     public void delete(Long id) {
-        Book book = findBookById(id);
-
-        cartItemRepository.deleteAllByBookEdition_Book_Id(id);
-        cartItemRepository.flush();
-        wishlistItemRepository.deleteAllByBook_Id(id);
-        wishlistItemRepository.flush();
-        reviewRepository.deleteAllByBook_Id(id);
-        reviewRepository.flush();
-        orderItemRepository.detachAllByBookId(id);
-        orderItemRepository.flush();
-
-        List<BookAuthor> authorLinks =
-                bookAuthorRepository.findAllByBook_Id(id);
-
-        List<BookCategory> categoryLinks =
-                bookCategoryRepository.findAllByBook_Id(id);
-
-        List<BookEdition> editions =
-                bookEditionRepository.findAllByBook_Id(id);
-
-        deleteEditionInventory(editions);
-
-        bookEditionRepository.deleteAll(editions);
-        bookEditionRepository.flush();
-
-        bookAuthorRepository.deleteAll(authorLinks);
-        bookAuthorRepository.flush();
-
-        bookCategoryRepository.deleteAll(categoryLinks);
-        bookCategoryRepository.flush();
-
-        bookRepository.delete(book);
+        deletion.delete(find(id));
     }
 
-    private Book findBookById(Long id) {
-        return bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Book not found with id: " + id
-                ));
+    private Book find(Long id) {
+        return books.findById(id).orElseThrow(() ->
+                new ResourceNotFoundException("Book not found with id: " + id));
     }
 
-    private Inventory findInventoryForUpdate(Long editionId) {
-        if (!bookEditionRepository.existsById(editionId)) {
-            throw new ResourceNotFoundException(
-                    "Book edition not found with id: " + editionId
-            );
-        }
-        return inventoryRepository.findByBookEditionIdForUpdate(editionId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Inventory not found for book edition id: " + editionId
-                ));
-    }
-
-    private AvailabilityStatus normalizeAvailability(
-            int stock,
-            AvailabilityStatus requested
-    ) {
-        return stock == 0
-                && requested == AvailabilityStatus.IN_STOCK
-                ? AvailabilityStatus.OUT_OF_STOCK
-                : requested;
-    }
-
-    private List<Author> findAuthors(Set<Long> authorIds) {
-        List<Author> authors = authorRepository.findAllById(authorIds);
-
-        Set<Long> foundIds = authors.stream()
-                .map(Author::getId)
-                .collect(Collectors.toSet());
-
-        List<Long> missingIds = authorIds.stream()
-                .filter(id -> !foundIds.contains(id))
-                .sorted()
-                .toList();
-
-        if (!missingIds.isEmpty()) {
-            throw new ResourceNotFoundException(
-                    "Authors not found with ids: " + missingIds
-            );
-        }
-
-        return authors;
-    }
-
-    private List<Category> findCategories(Set<Long> categoryIds) {
-        List<Category> categories =
-                categoryRepository.findAllById(categoryIds);
-
-        Set<Long> foundIds = categories.stream()
-                .map(Category::getId)
-                .collect(Collectors.toSet());
-
-        List<Long> missingIds = categoryIds.stream()
-                .filter(id -> !foundIds.contains(id))
-                .sorted()
-                .toList();
-
-        if (!missingIds.isEmpty()) {
-            throw new ResourceNotFoundException(
-                    "Categories not found with ids: " + missingIds
-            );
-        }
-
-        return categories;
-    }
-
-    private Map<Long, Publisher> findPublishers(
-            List<BookEditionRequest> editionRequests
-    ) {
-        Set<Long> publisherIds = editionRequests.stream()
-                .map(BookEditionRequest::publisherId)
-                .filter(id -> id != null)
-                .collect(Collectors.toSet());
-
-        List<Publisher> publishers =
-                publisherRepository.findAllById(publisherIds);
-
-        Set<Long> foundIds = publishers.stream()
-                .map(Publisher::getId)
-                .collect(Collectors.toSet());
-
-        List<Long> missingIds = publisherIds.stream()
-                .filter(id -> !foundIds.contains(id))
-                .sorted()
-                .toList();
-
-        if (!missingIds.isEmpty()) {
-            throw new ResourceNotFoundException(
-                    "Publishers not found with ids: " + missingIds
-            );
-        }
-
-        return publishers.stream()
-                .collect(Collectors.toMap(
-                        Publisher::getId,
-                        Function.identity()
-                ));
-    }
-
-    private void validateIsbnUniqueness(
-            List<BookEditionRequest> editions,
-            Long currentBookId
-    ) {
-        Set<String> requestIsbn10Values = new HashSet<>();
-        Set<String> requestIsbn13Values = new HashSet<>();
-
-        for (BookEditionRequest edition : editions) {
-            String isbn10 = normalizeIsbn10(edition.isbn10());
-            String isbn13 = normalizeIsbn13(edition.isbn13());
-
-            validateIsbn10(
-                    isbn10,
-                    currentBookId,
-                    requestIsbn10Values
-            );
-
-            validateIsbn13(
-                    isbn13,
-                    currentBookId,
-                    requestIsbn13Values
-            );
-        }
-    }
-
-    private void validateSupportedFormats(List<BookEditionRequest> editions) {
-        for (BookEditionRequest edition : editions) {
-            rejectUnsupportedDigitalSale(
-                    edition.format(), edition.inventory().active()
-            );
-        }
-    }
-
-    private void rejectUnsupportedDigitalSale(
-            BookFormat format,
-            boolean active
-    ) {
-        if (active && format.isDigital()) {
-            throw new com.akshara.api.common.exception.InvalidRequestException(
-                    "Digital editions cannot be activated for sale until "
-                            + "a licensed file and reader entitlement are configured"
-            );
-        }
-    }
-
-    private void validateIsbn10(
-            String isbn10,
-            Long currentBookId,
-            Set<String> requestValues
-    ) {
-        if (isbn10 == null) {
-            return;
-        }
-
-        if (!isbn10.matches("^[0-9]{9}[0-9X]$")
-                || !hasValidIsbn10Checksum(isbn10)) {
-            throw new com.akshara.api.common.exception.InvalidRequestException(
-                    "ISBN-10 '" + isbn10 + "' is invalid"
-            );
-        }
-
-        if (!requestValues.add(isbn10)) {
-            throw new DuplicateResourceException(
-                    "ISBN-10 '" + isbn10
-                            + "' occurs more than once in the request"
-            );
-        }
-
-        bookEditionRepository.findByIsbn10(isbn10)
-                .filter(existing ->
-                        currentBookId == null
-                                || !existing.getBook()
-                                .getId()
-                                .equals(currentBookId)
-                )
-                .ifPresent(existing -> {
-                    throw new DuplicateResourceException(
-                            "A book edition with ISBN-10 '"
-                                    + isbn10 + "' already exists"
-                    );
-                });
-    }
-
-    private void validateIsbn13(
-            String isbn13,
-            Long currentBookId,
-            Set<String> requestValues
-    ) {
-        if (isbn13 == null) {
-            return;
-        }
-
-        if (!isbn13.matches("^[0-9]{13}$")
-                || !hasValidIsbn13Checksum(isbn13)) {
-            throw new com.akshara.api.common.exception.InvalidRequestException(
-                    "ISBN-13 '" + isbn13 + "' is invalid"
-            );
-        }
-
-        if (!requestValues.add(isbn13)) {
-            throw new DuplicateResourceException(
-                    "ISBN-13 '" + isbn13
-                            + "' occurs more than once in the request"
-            );
-        }
-
-        bookEditionRepository.findByIsbn13(isbn13)
-                .filter(existing ->
-                        currentBookId == null
-                                || !existing.getBook()
-                                .getId()
-                                .equals(currentBookId)
-                )
-                .ifPresent(existing -> {
-                    throw new DuplicateResourceException(
-                            "A book edition with ISBN-13 '"
-                                    + isbn13 + "' already exists"
-                    );
-                });
-    }
-
-    private void applyBookFields(
-            Book book,
-            BookRequest request
-    ) {
+    private void applyFields(Book book, BookRequest request) {
         book.setTitle(request.title().trim());
-        book.setSubtitle(normalizeOptional(request.subtitle()));
-        book.setDescription(normalizeOptional(request.description()));
-        book.setCoverImageUrl(
-                normalizeOptional(request.coverImageUrl())
-        );
-        book.setLanguageCode(
-                normalizeOptional(request.languageCode())
-        );
+        book.setSubtitle(validator.normalizeOptional(request.subtitle()));
+        book.setDescription(validator.normalizeOptional(request.description()));
+        book.setCoverImageUrl(validator.normalizeOptional(request.coverImageUrl()));
+        book.setLanguageCode(validator.normalizeOptional(request.languageCode()));
         book.setFeatured(request.featured());
     }
 
-    private void validateSkuUniqueness(
-            List<BookEditionRequest> editions,
-            Long currentBookId
-    ) {
-        Set<String> requestValues = new HashSet<>();
-        for (BookEditionRequest edition : editions) {
-            String sku = edition.sku().trim();
-            String comparisonValue = sku.toLowerCase(Locale.ROOT);
-            if (!requestValues.add(comparisonValue)) {
-                throw new DuplicateResourceException(
-                        "SKU '" + sku + "' occurs more than once in the request"
-                );
-            }
-            bookEditionRepository.findBySkuIgnoreCase(sku)
-                    .filter(existing -> currentBookId == null
-                            || !existing.getBook().getId().equals(currentBookId))
-                    .ifPresent(existing -> {
-                        throw new DuplicateResourceException(
-                                "A book edition with SKU '" + sku + "' already exists"
-                        );
-                    });
-        }
-    }
-
-    private void saveAuthorRelationships(
-            Book book,
-            List<Author> authors
-    ) {
-        List<BookAuthor> relationships = authors.stream()
-                .map(author -> new BookAuthor(book, author))
-                .toList();
-
-        bookAuthorRepository.saveAll(relationships);
-    }
-
-    private void saveCategoryRelationships(
-            Book book,
-            List<Category> categories
-    ) {
-        List<BookCategory> relationships = categories.stream()
-                .map(category -> new BookCategory(book, category))
-                .toList();
-
-        bookCategoryRepository.saveAll(relationships);
-    }
-
-    private void replaceAuthorRelationships(
-            Book book,
-            List<Author> requestedAuthors
-    ) {
-        List<BookAuthor> existingLinks =
-                bookAuthorRepository.findAllByBook_Id(book.getId());
-
-        Set<Long> requestedIds = requestedAuthors.stream()
-                .map(Author::getId)
-                .collect(Collectors.toSet());
-
-        Set<Long> existingIds = existingLinks.stream()
-                .map(link -> link.getAuthor().getId())
-                .collect(Collectors.toSet());
-
-        List<BookAuthor> linksToDelete = existingLinks.stream()
-                .filter(link ->
-                        !requestedIds.contains(
-                                link.getAuthor().getId()
-                        )
-                )
-                .toList();
-
-        List<BookAuthor> linksToAdd = requestedAuthors.stream()
-                .filter(author ->
-                        !existingIds.contains(author.getId())
-                )
-                .map(author -> new BookAuthor(book, author))
-                .toList();
-
-        bookAuthorRepository.deleteAll(linksToDelete);
-        bookAuthorRepository.saveAll(linksToAdd);
-    }
-
-    private void replaceCategoryRelationships(
-            Book book,
-            List<Category> requestedCategories
-    ) {
-        List<BookCategory> existingLinks =
-                bookCategoryRepository.findAllByBook_Id(book.getId());
-
-        Set<Long> requestedIds = requestedCategories.stream()
-                .map(Category::getId)
-                .collect(Collectors.toSet());
-
-        Set<Long> existingIds = existingLinks.stream()
-                .map(link -> link.getCategory().getId())
-                .collect(Collectors.toSet());
-
-        List<BookCategory> linksToDelete = existingLinks.stream()
-                .filter(link ->
-                        !requestedIds.contains(
-                                link.getCategory().getId()
-                        )
-                )
-                .toList();
-
-        List<BookCategory> linksToAdd =
-                requestedCategories.stream()
-                        .filter(category ->
-                                !existingIds.contains(category.getId())
-                        )
-                        .map(category ->
-                                new BookCategory(book, category)
-                        )
-                        .toList();
-
-        bookCategoryRepository.deleteAll(linksToDelete);
-        bookCategoryRepository.saveAll(linksToAdd);
-    }
-
-    private void replaceEditions(
-            Book book,
-            List<BookEditionRequest> editionRequests,
-            Map<Long, Publisher> publishers
-    ) {
-        List<BookEdition> existingEditions =
-                bookEditionRepository.findAllByBook_Id(book.getId());
-
-        deleteEditionInventory(existingEditions);
-
-        bookEditionRepository.deleteAll(existingEditions);
-        bookEditionRepository.flush();
-
-        createEditions(book, editionRequests, publishers);
-    }
-
-    private void deleteEditionInventory(
-            List<BookEdition> editions
-    ) {
-        List<Inventory> inventories = editions.stream()
-                .map(edition ->
-                        inventoryRepository.findByBookEdition_Id(
-                                edition.getId()
-                        )
-                )
-                .flatMap(optional -> optional.stream())
-                .toList();
-
-        inventoryRepository.deleteAll(inventories);
-        inventoryRepository.flush();
-    }
-
-    private void createEditions(
-            Book book,
-            List<BookEditionRequest> editionRequests,
-            Map<Long, Publisher> publishers
-    ) {
-        createEditions(book, editionRequests, publishers, null);
-    }
-
-    private void createEditions(
-            Book book,
-            List<BookEditionRequest> editionRequests,
-            Map<Long, Publisher> publishers,
-            String externalEditionId
-    ) {
-        for (BookEditionRequest request : editionRequests) {
-            BookEdition edition = new BookEdition(
-                    book,
-                    request.format()
-            );
-
-            if (request.publisherId() != null) {
-                edition.setPublisher(
-                        publishers.get(request.publisherId())
-                );
-            }
-
-            edition.setEditionName(
-                    normalizeOptional(request.editionName())
-            );
-            edition.setIsbn10(normalizeIsbn10(request.isbn10()));
-            edition.setIsbn13(normalizeIsbn13(request.isbn13()));
-            edition.setPublicationDate(request.publicationDate());
-            edition.setPageCount(request.pageCount());
-            edition.setSku(request.sku().trim());
-            edition.setExternalEditionId(externalEditionId);
-
-            BookEdition savedEdition =
-                    bookEditionRepository.save(edition);
-
-            InventoryRequest inventoryRequest =
-                    request.inventory();
-
-            Inventory inventory = new Inventory(
-                    savedEdition,
-                    inventoryRequest.price(),
-                    inventoryRequest.stockQuantity(),
-                    inventoryRequest.availabilityStatus()
-            );
-
-            inventory.setActive(inventoryRequest.active());
-            inventoryRepository.save(inventory);
-        }
-    }
-
-    private BookResponse toResponse(Book book) {
-        List<AuthorResponse> authors =
-                bookAuthorRepository
-                        .findAllByBook_Id(book.getId())
-                        .stream()
-                        .map(BookAuthor::getAuthor)
-                        .sorted(Comparator.comparing(
-                                Author::getName,
-                                String.CASE_INSENSITIVE_ORDER
-                        ))
-                        .map(this::toAuthorResponse)
-                        .toList();
-
-        List<CategoryResponse> categories =
-                bookCategoryRepository
-                        .findAllByBook_Id(book.getId())
-                        .stream()
-                        .map(BookCategory::getCategory)
-                        .sorted(Comparator.comparing(
-                                Category::getName,
-                                String.CASE_INSENSITIVE_ORDER
-                        ))
-                        .map(this::toCategoryResponse)
-                        .toList();
-
-        List<BookEditionResponse> editions =
-                bookEditionRepository
-                        .findAllByBook_Id(book.getId())
-                        .stream()
-                        .sorted(Comparator.comparing(
-                                BookEdition::getId
-                        ))
-                        .map(this::toEditionResponse)
-                        .toList();
-
-        return new BookResponse(
-                book.getId(),
-                book.getTitle(),
-                book.getSubtitle(),
-                book.getDescription(),
-                book.getCoverImageUrl(),
-                book.getLanguageCode(),
-                book.isFeatured(),
-                book.getMetadataSource(),
-                book.getExternalWorkId(),
-                authors,
-                categories,
-                editions,
-                book.getCreatedAt(),
-                book.getUpdatedAt()
-        );
-    }
-
-    private BookEditionResponse toEditionResponse(
-            BookEdition edition
-    ) {
-        PublisherResponse publisher = edition.getPublisher() == null
-                ? null
-                : toPublisherResponse(edition.getPublisher());
-
-        Inventory inventory = inventoryRepository
-                .findByBookEdition_Id(edition.getId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Inventory not found for book edition id: "
-                                + edition.getId()
-                ));
-
-        return new BookEditionResponse(
-                edition.getId(),
-                publisher,
-                edition.getFormat(),
-                edition.getEditionName(),
-                edition.getIsbn10(),
-                edition.getIsbn13(),
-                edition.getPublicationDate(),
-                edition.getPageCount(),
-                edition.getSku(),
-                edition.getExternalEditionId(),
-                toInventoryResponse(inventory),
-                edition.getCreatedAt(),
-                edition.getUpdatedAt()
-        );
-    }
-
-    private AuthorResponse toAuthorResponse(Author author) {
-        return new AuthorResponse(
-                author.getId(),
-                author.getName(),
-                author.getBiography(),
-                author.getCreatedAt(),
-                author.getUpdatedAt()
-        );
-    }
-
-    private CategoryResponse toCategoryResponse(
-            Category category
-    ) {
-        return new CategoryResponse(
-                category.getId(),
-                category.getName(),
-                category.getSlug(),
-                category.getDescription(),
-                category.getCreatedAt(),
-                category.getUpdatedAt()
-        );
-    }
-
-    private PublisherResponse toPublisherResponse(
-            Publisher publisher
-    ) {
-        return new PublisherResponse(
-                publisher.getId(),
-                publisher.getName(),
-                publisher.getWebsiteUrl(),
-                publisher.getCreatedAt(),
-                publisher.getUpdatedAt()
-        );
-    }
-
-    private InventoryResponse toInventoryResponse(
-            Inventory inventory
-    ) {
-        return new InventoryResponse(
-                inventory.getId(),
-                inventory.getPrice(),
-                inventory.getStockQuantity(),
-                inventory.getAvailabilityStatus(),
-                inventory.isActive(),
-                inventory.getUpdatedAt()
-        );
-    }
-
-    private String normalizeIsbn10(String value) {
-        String normalized = normalizeOptional(value);
-
-        return normalized == null
-                ? null
-                : normalized.replaceAll("[-\\s]", "")
-                .toUpperCase(Locale.ROOT);
-    }
-
-    private String normalizeIsbn13(String value) {
-        String normalized = normalizeOptional(value);
-        return normalized == null ? null
-                : normalized.replaceAll("[-\\s]", "");
-    }
-
-    private boolean hasValidIsbn10Checksum(String isbn) {
-        int sum = 0;
-        for (int index = 0; index < 10; index++) {
-            char character = isbn.charAt(index);
-            int value = character == 'X' ? 10 : character - '0';
-            sum += (10 - index) * value;
-        }
-        return sum % 11 == 0;
-    }
-
-    private boolean hasValidIsbn13Checksum(String isbn) {
-        int sum = 0;
-        for (int index = 0; index < 12; index++) {
-            int value = isbn.charAt(index) - '0';
-            sum += value * (index % 2 == 0 ? 1 : 3);
-        }
-        int checkDigit = (10 - (sum % 10)) % 10;
-        return checkDigit == isbn.charAt(12) - '0';
-    }
-
-    private String normalizeOptional(String value) {
-        if (value == null) {
-            return null;
-        }
-
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    private Sort createSort(BookSort requestedSort) {
-        BookSort effectiveSort = requestedSort == null
-                ? BookSort.TITLE_ASC
-                : requestedSort;
-
-        return switch (effectiveSort) {
+    private Sort createSort(BookSort requested) {
+        BookSort effective = requested == null ? BookSort.TITLE_ASC : requested;
+        return switch (effective) {
             case TITLE_ASC -> Sort.by(
-                    Sort.Order.asc("title").ignoreCase(),
-                    Sort.Order.asc("id")
-            );
-
+                    Sort.Order.asc("title").ignoreCase(), Sort.Order.asc("id"));
             case TITLE_DESC -> Sort.by(
-                    Sort.Order.desc("title").ignoreCase(),
-                    Sort.Order.desc("id")
-            );
-
+                    Sort.Order.desc("title").ignoreCase(), Sort.Order.desc("id"));
             case NEWEST -> Sort.by(
-                    Sort.Order.desc("createdAt"),
-                    Sort.Order.desc("id")
-            );
-
+                    Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
             case OLDEST -> Sort.by(
-                    Sort.Order.asc("createdAt"),
-                    Sort.Order.asc("id")
-            );
+                    Sort.Order.asc("createdAt"), Sort.Order.asc("id"));
         };
     }
 }

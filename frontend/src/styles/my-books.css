@@ -1,0 +1,366 @@
+.my-books-page {
+  min-height: 70vh;
+}
+
+.my-books-hero {
+  display: grid;
+  margin-bottom: 1.5rem;
+  padding: 2.35rem 2.5rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 3rem;
+  color: var(--white);
+  background: var(--forest);
+  border-radius: 22px;
+}
+
+.my-books-hero .eyebrow {
+  color: var(--saffron);
+}
+
+.my-books-hero h1 {
+  margin-bottom: 0.65rem;
+  color: var(--white);
+  font-family: var(--serif);
+  font-size: clamp(2.8rem, 6vw, 4.7rem);
+}
+
+.my-books-hero p:last-child {
+  max-width: 620px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.my-books-stats {
+  display: grid;
+  min-width: 220px;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 0.2rem 0.8rem;
+}
+
+.my-books-stats strong {
+  color: var(--saffron);
+  font-family: var(--serif);
+  font-size: 2.2rem;
+}
+
+.my-books-stats span {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.78rem;
+}
+
+.my-books-toolbar {
+  display: flex;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.personal-upload-panel {
+  margin-bottom: 1.4rem;
+  overflow: hidden;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.personal-upload-panel.is-open {
+  border-color: rgba(20, 78, 65, 0.35);
+  box-shadow: 0 14px 30px rgba(20, 47, 41, 0.07);
+}
+
+.personal-upload-toggle {
+  display: flex;
+  width: 100%;
+  padding: 1.15rem 1.3rem;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--forest);
+  text-align: left;
+  background: transparent;
+  border: 0;
+}
+
+.personal-upload-toggle > span {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.personal-upload-toggle > span > i {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  color: var(--white);
+  font-size: 1.15rem;
+  background: var(--forest);
+  border-radius: 50%;
+}
+
+.personal-upload-toggle span span {
+  display: flex;
+  flex-direction: column;
+}
+
+.personal-upload-toggle small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.personal-upload-form {
+  display: grid;
+  padding: 1.3rem;
+  grid-template-columns: 1fr 1fr 1.35fr auto;
+  align-items: end;
+  gap: 1rem;
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+}
+
+.personal-upload-form label {
+  display: flex;
+  margin: 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.4rem;
+  color: var(--forest);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.personal-upload-form input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.65rem 0.75rem;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.personal-upload-form input[type='file'] {
+  padding: 0.48rem;
+  font-size: 0.72rem;
+}
+
+.personal-upload-form label > span small,
+.personal-file-field > small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.personal-file-field > small {
+  min-height: 1em;
+  font-size: 0.61rem;
+}
+
+.personal-upload-form .btn {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.personal-upload-message {
+  margin: 0;
+  padding: 0.8rem 1.3rem;
+  color: var(--forest);
+  font-size: 0.75rem;
+  font-weight: 750;
+  border-top: 1px solid var(--line);
+}
+
+.my-books-toolbar button,
+.my-books-toolbar a {
+  padding: 0.65rem 1rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.my-books-toolbar button.is-active {
+  color: var(--white);
+  background: var(--forest);
+}
+
+.my-books-toolbar > a,
+.my-books-toolbar-links a {
+  margin-left: auto;
+  color: var(--forest);
+  border-color: var(--line);
+}
+
+.my-books-toolbar-links {
+  display: flex;
+  margin-left: auto;
+  gap: 0.45rem;
+}
+
+.my-books-toolbar-links a {
+  margin-left: 0;
+}
+
+.my-books-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.my-book-card {
+  display: grid;
+  min-width: 0;
+  padding: 1.25rem;
+  grid-template-columns: 125px minmax(0, 1fr);
+  gap: 1.4rem;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.my-book-cover {
+  position: relative;
+}
+
+.my-book-cover > img,
+.my-book-fallback {
+  width: 125px;
+  height: 184px;
+  object-fit: cover;
+  border-radius: 7px;
+  box-shadow: 0 12px 26px rgba(20, 47, 41, 0.16);
+}
+
+.my-book-fallback {
+  display: flex;
+  padding: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: column;
+  color: var(--white);
+}
+
+.my-book-fallback span {
+  color: var(--saffron);
+  font-size: 1.5rem;
+}
+
+.my-book-fallback strong {
+  font-family: var(--serif);
+  font-size: 2rem;
+}
+
+.my-book-status {
+  position: absolute;
+  right: -8px;
+  bottom: 8px;
+  padding: 0.35rem 0.55rem;
+  color: var(--white);
+  font-size: 0.62rem;
+  font-weight: 850;
+  background: var(--forest);
+  border-radius: 999px;
+  box-shadow: 0 4px 10px rgba(20, 47, 41, 0.18);
+}
+
+.my-book-status.status-transit {
+  color: var(--ink);
+  background: var(--saffron);
+}
+
+.my-book-status.status-uploaded {
+  background: #60446f;
+}
+
+.my-book-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.my-book-copy > p {
+  margin: 0 0 0.45rem;
+  color: var(--ochre);
+  font-size: 0.67rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.my-book-copy h2 {
+  margin-bottom: 0.35rem;
+  font-family: var(--serif);
+  font-size: 1.55rem;
+}
+
+.my-book-copy > span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-book-progress {
+  display: flex;
+  margin-top: auto;
+  padding: 0.8rem 0;
+  align-items: center;
+  gap: 0.65rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.my-book-progress i {
+  color: var(--ochre);
+}
+
+.my-book-progress div {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.73rem;
+}
+
+.my-book-progress small {
+  color: var(--muted);
+}
+
+.my-book-actions {
+  display: flex;
+  padding-top: 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.my-book-actions a {
+  font-size: 0.73rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.personal-book-actions {
+  justify-content: flex-start;
+}
+
+.personal-book-actions button {
+  padding: 0;
+  color: var(--forest);
+  font-size: 0.7rem;
+  font-weight: 850;
+  background: transparent;
+  border: 0;
+}
+
+.personal-book-actions button.danger {
+  margin-left: auto;
+  color: #a43d30;
+}
+
+.personal-book-actions button:disabled {
+  opacity: 0.45;
+}

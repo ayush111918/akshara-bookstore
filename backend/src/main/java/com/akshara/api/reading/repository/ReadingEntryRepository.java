@@ -25,6 +25,12 @@ public interface ReadingEntryRepository extends JpaRepository<ReadingEntry, Long
 
     long countByUser_IdAndStatus(Long userId, ReadingStatus status);
 
+    boolean existsByUser_IdAndBookIdAndStatus(
+            Long userId,
+            Long bookId,
+            ReadingStatus status
+    );
+
     long countByUser_IdAndStatusAndCompletedOnBetween(
             Long userId,
             ReadingStatus status,

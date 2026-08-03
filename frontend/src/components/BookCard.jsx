@@ -24,6 +24,10 @@ function BookCard({ book }) {
   const availability = getAvailability(book)
   const category = book.categories?.[0]?.name
   const saved = wishlistBookIds.has(book.id)
+  const stock = edition?.inventory?.stockQuantity ?? 0
+  const stockCopy = availability.tone === 'available'
+    ? `${stock} ${stock === 1 ? 'copy' : 'copies'} ready`
+    : availability.label
 
   function requireReader() {
     if (user) return true
@@ -100,20 +104,24 @@ function BookCard({ book }) {
 
         <p className="book-card-author">by {getAuthors(book)}</p>
 
-        <div className="book-card-rating" aria-label="Reader rating preview">
-          <span aria-hidden="true">★</span>
-          <strong>New</strong>
-          <span>Reader discovery</span>
+        <div className={`book-card-stock availability-${availability.tone}`}>
+          <i className={`bi ${availability.tone === 'available' ? 'bi-box-seam' : 'bi-clock'}`} />
+          <span>{stockCopy}</span>
         </div>
 
         <div className="book-card-footer">
-          <strong className="book-card-price">{formatPrice(getBookPrice(book))}</strong>
+          <div className="book-card-price">
+            <span>{getBookPrice(book) == null ? 'Edition price' : 'From'}</span>
+            <strong>{formatPrice(getBookPrice(book))}</strong>
+          </div>
           <div className="book-card-actions">
-            <button className="book-card-arrow" disabled={busy || availability.tone !== 'available'} onClick={handleCart} aria-label={`Add ${book.title} to cart`}><i className="bi bi-bag-plus" /></button>
+            <button className="book-card-cart-button" type="button" disabled={busy || availability.tone !== 'available'} onClick={handleCart} aria-label={`Add ${book.title} to cart`}>
+              <i className="bi bi-bag-plus" /> {busy ? 'Adding…' : 'Add to bag'}
+            </button>
             <Link className="book-card-arrow" to={`/books/${book.id}`} aria-label={`View details for ${book.title}`}><i className="bi bi-arrow-up-right" /></Link>
           </div>
         </div>
-        {message && <span className="book-card-message" role="status">{message}</span>}
+        {message && <span className="book-card-message" role="status" aria-live="polite">{message}</span>}
       </div>
     </article>
   )

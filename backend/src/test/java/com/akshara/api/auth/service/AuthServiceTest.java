@@ -43,7 +43,7 @@ class AuthServiceTest {
         var response = service.login(new LoginRequest(" Reader@Example.com ", "secret123"), "127.0.0.1", "test");
 
         assertThat(response.accessToken()).isEqualTo("jwt");
-        verify(auditService).record(7L, "reader@example.com", "LOGIN", "SUCCESS",
+        verify(auditService).recordAfterCommit(7L, "reader@example.com", "LOGIN", "SUCCESS",
                 "127.0.0.1", "test", "Reader signed in");
     }
 

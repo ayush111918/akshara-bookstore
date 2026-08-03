@@ -9,6 +9,8 @@ import com.akshara.api.review.repository.ReviewReplyRepository;
 import com.akshara.api.review.repository.ReviewRepository;
 import com.akshara.api.user.entity.AppUser;
 import com.akshara.api.user.service.UserService;
+import com.akshara.api.order.repository.OrderItemRepository;
+import com.akshara.api.reading.repository.ReadingEntryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +33,8 @@ class ReviewDiscussionServiceTest {
     @Mock BookRepository bookRepository;
     @Mock UserService userService;
     @Mock ReviewReplyRepository reviewReplyRepository;
+    @Mock OrderItemRepository orderItemRepository;
+    @Mock ReadingEntryRepository readingEntryRepository;
     @Mock AppUser user;
     @Mock AppUser anotherUser;
     @Mock Review review;
@@ -40,7 +44,10 @@ class ReviewDiscussionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ReviewService(reviewRepository, bookRepository, userService, reviewReplyRepository);
+        service = new ReviewService(
+                reviewRepository, bookRepository, userService, reviewReplyRepository,
+                orderItemRepository, readingEntryRepository
+        );
     }
 
     @Test

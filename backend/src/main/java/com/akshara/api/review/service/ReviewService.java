@@ -14,6 +14,10 @@ import com.akshara.api.review.entity.Review;
 import com.akshara.api.review.entity.ReviewReply;
 import com.akshara.api.review.repository.ReviewRepository;
 import com.akshara.api.review.repository.ReviewReplyRepository;
+import com.akshara.api.order.entity.OrderStatus;
+import com.akshara.api.order.repository.OrderItemRepository;
+import com.akshara.api.reading.entity.ReadingStatus;
+import com.akshara.api.reading.repository.ReadingEntryRepository;
 import com.akshara.api.user.entity.AppUser;
 import com.akshara.api.user.service.UserService;
 import org.springframework.data.domain.PageRequest;
@@ -30,17 +34,23 @@ public class ReviewService {
     private final BookRepository bookRepository;
     private final UserService userService;
     private final ReviewReplyRepository reviewReplyRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final ReadingEntryRepository readingEntryRepository;
 
     public ReviewService(
             ReviewRepository reviewRepository,
             BookRepository bookRepository,
             UserService userService,
-            ReviewReplyRepository reviewReplyRepository
+            ReviewReplyRepository reviewReplyRepository,
+            OrderItemRepository orderItemRepository,
+            ReadingEntryRepository readingEntryRepository
     ) {
         this.reviewRepository = reviewRepository;
         this.bookRepository = bookRepository;
         this.userService = userService;
         this.reviewReplyRepository = reviewReplyRepository;
+        this.orderItemRepository = orderItemRepository;
+        this.readingEntryRepository = readingEntryRepository;
     }
 
     @Transactional(readOnly = true)
@@ -171,16 +181,24 @@ public class ReviewService {
     }
 
     private ReviewResponse toResponse(Review review) {
+        Long userId = review.getUser().getId();
+        Long bookId = review.getBook().getId();
         return new ReviewResponse(
                 review.getId(),
-                review.getBook().getId(),
+                bookId,
                 review.getBook().getTitle(),
                 review.getBook().getCoverImageUrl(),
-                review.getUser().getId(),
+                userId,
                 review.getUser().getFullName(),
                 review.getRating(),
                 review.getHeadline(),
                 review.getContent(),
+                orderItemRepository.existsByOrder_User_IdAndOrder_StatusAndBookEdition_Book_Id(
+                        userId, OrderStatus.DELIVERED, bookId
+                ),
+                readingEntryRepository.existsByUser_IdAndBookIdAndStatus(
+                        userId, bookId, ReadingStatus.COMPLETED
+                ),
                 review.getCreatedAt(),
                 review.getUpdatedAt()
         );
