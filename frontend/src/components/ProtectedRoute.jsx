@@ -10,7 +10,7 @@ function ProtectedRoute({ children }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />
+    return <Navigate to="/login" state={{ from: location, sessionExpired: Boolean(localStorage.getItem('akshara.session.expired')) }} replace />
   }
 
   return children

@@ -61,6 +61,7 @@ function Navbar() {
               <>
                 <li className="nav-item"><Link className="nav-link admin-nav-link" to="/admin/orders"><i className="bi bi-box-seam" /> Orders</Link></li>
                 <li className="nav-item"><Link className="nav-link admin-nav-link" to="/admin/books"><i className="bi bi-sliders" /> Catalogue</Link></li>
+                <li className="nav-item"><Link className="nav-link admin-nav-link" to="/admin/audit-logs"><i className="bi bi-shield-check" /> Audit</Link></li>
               </>
             ) : (
               <>
@@ -83,7 +84,7 @@ function Navbar() {
             <li className="nav-item ms-lg-1">
               {user ? (
                 <div className="nav-reader-menu">
-                  <Link to={user.role === 'ADMIN' ? '/admin/books' : '/my-books'}><i className="bi bi-person-circle" /> {user.fullName.split(' ')[0]}</Link>
+                  <Link to={user.role === 'ADMIN' ? '/admin/books' : '/account'}><i className="bi bi-person-circle" /> {user.fullName.split(' ')[0]}</Link>
                   <button type="button" onClick={signOut}>Sign out</button>
                 </div>
               ) : <Link className="btn btn-ink nav-join-button" to="/register">Join Akshara</Link>}

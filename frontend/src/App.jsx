@@ -18,6 +18,9 @@ import MyBooksPage from './pages/MyBooksPage'
 import AdminOrdersPage from './pages/AdminOrdersPage'
 import MyReviewsPage from './pages/MyReviewsPage'
 import ReadingJourneyPage from './pages/ReadingJourneyPage'
+import AccountPage from './pages/AccountPage'
+import AdminAuditPage from './pages/AdminAuditPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
   const location = useLocation()
@@ -42,9 +45,12 @@ function App() {
             <Route path="/my-books" element={<ProtectedRoute><MyBooksPage /></ProtectedRoute>} />
             <Route path="/my-reviews" element={<ProtectedRoute><MyReviewsPage /></ProtectedRoute>} />
             <Route path="/reading-journey" element={<ProtectedRoute><ReadingJourneyPage /></ProtectedRoute>} />
+            <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
             <Route path="/admin/books/import" element={<AdminRoute><BookImportPage /></AdminRoute>} />
             <Route path="/admin/books" element={<AdminRoute><CatalogueAdminPage /></AdminRoute>} />
             <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
+            <Route path="/admin/audit-logs" element={<AdminRoute><AdminAuditPage /></AdminRoute>} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </RouteErrorBoundary>
       </main>

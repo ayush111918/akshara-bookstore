@@ -21,7 +21,10 @@ export function clearStoredSession() {
 export function getApiErrorMessage(error, fallback = 'Something went wrong. Please try again.') {
   const data = error?.response?.data
   const firstFieldError = data?.fieldErrors && Object.values(data.fieldErrors)[0]
-  return firstFieldError || data?.message || fallback
+  if (firstFieldError || data?.message) return firstFieldError || data.message
+  if (error?.code === 'ECONNABORTED') return 'The server took too long to respond. Please try again.'
+  if (!error?.response && error?.request) return 'Akshara cannot reach the server. Check your connection and try again.'
+  return fallback
 }
 
 const api = axios.create({
@@ -36,5 +39,19 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const session = loadStoredSession()
+    const requestUrl = error?.config?.url || ''
+    if (error?.response?.status === 401 && session?.accessToken && !requestUrl.startsWith('/auth/')) {
+      clearStoredSession()
+      localStorage.setItem('akshara.session.expired', 'true')
+      window.dispatchEvent(new CustomEvent('akshara:session-expired'))
+    }
+    return Promise.reject(error)
+  },
+)
 
 export default api

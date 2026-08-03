@@ -112,6 +112,13 @@ public class PersonalLibraryService {
         deleteQuietly(resolveStoredFile(book.getStoredFilename()));
     }
 
+    @Transactional
+    public void deleteAllForUser(Long userId) {
+        List<PersonalBook> books = personalBookRepository.findAllByUser_IdOrderByCreatedAtDesc(userId);
+        personalBookRepository.deleteAll(books);
+        books.forEach(book -> deleteQuietly(resolveStoredFile(book.getStoredFilename())));
+    }
+
     private PersonalBook getOwnedBook(String subject, Long bookId) {
         AppUser user = getAuthenticatedUser(subject);
         return personalBookRepository.findByIdAndUser_Id(bookId, user.getId())

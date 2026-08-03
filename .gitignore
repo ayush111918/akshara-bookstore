@@ -72,3 +72,4 @@ application-local.yaml
 .DS_Store
 Thumbs.db
 backend/data/personal-library/
+docs/

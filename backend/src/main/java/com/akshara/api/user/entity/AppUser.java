@@ -3,6 +3,7 @@ package com.akshara.api.user.entity;
 import jakarta.persistence.*;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(
@@ -41,6 +42,9 @@ public class AppUser {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 
     protected AppUser() {
         // Required by JPA
@@ -121,5 +125,15 @@ public class AppUser {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Instant getDeletedAt() { return deletedAt; }
+
+    public void closeAccount() {
+        if (id == null) throw new IllegalStateException("A saved account is required");
+        fullName = "Deleted Reader";
+        email = "deleted-" + id + "-" + UUID.randomUUID() + "@deleted.akshara.local";
+        enabled = false;
+        deletedAt = Instant.now();
     }
 }

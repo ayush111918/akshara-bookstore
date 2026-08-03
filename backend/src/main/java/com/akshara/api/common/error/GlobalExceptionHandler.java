@@ -20,14 +20,18 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.validation.method.ParameterErrors;
+import jakarta.validation.ConstraintViolationException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiErrorResponse> handleMaximumUploadSize(
@@ -231,11 +235,29 @@ public class GlobalExceptionHandler {
                 fieldErrors
         );
     }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleConstraintViolation(
+            ConstraintViolationException exception,
+            HttpServletRequest request
+    ) {
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        exception.getConstraintViolations().forEach(violation -> {
+            String path = violation.getPropertyPath().toString();
+            int separator = path.lastIndexOf('.');
+            String field = separator >= 0 ? path.substring(separator + 1) : path;
+            fieldErrors.putIfAbsent(field, violation.getMessage());
+        });
+        return buildResponse(HttpStatus.BAD_REQUEST, "Request validation failed",
+                request.getRequestURI(), fieldErrors);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleUnexpectedException(
             Exception exception,
             HttpServletRequest request
     ) {
+        log.error("Unhandled API error on {} {}", request.getMethod(), request.getRequestURI(), exception);
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "An unexpected server error occurred",

@@ -30,8 +30,18 @@ function AuthProvider({ children }) {
     return () => { active = false }
   }, [initialSession])
 
+  useEffect(() => {
+    function expireSession() {
+      clearStoredSession()
+      setUser(null)
+    }
+    window.addEventListener('akshara:session-expired', expireSession)
+    return () => window.removeEventListener('akshara:session-expired', expireSession)
+  }, [])
+
   const acceptSession = useCallback((session) => {
     storeSession(session)
+    localStorage.removeItem('akshara.session.expired')
     setUser(session.user)
     return session.user
   }, [])
@@ -46,6 +56,7 @@ function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     clearStoredSession()
+    localStorage.removeItem('akshara.session.expired')
     setUser(null)
   }, [])
 

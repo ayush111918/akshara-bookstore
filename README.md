@@ -9,6 +9,8 @@ Akshara – a full-stack online bookstore built with React, Spring Boot, JWT and
 - My Books for delivered purchases and private PDF/EPUB uploads
 - Reading Journey with shelves, page progress, dates, private notes, quotations,
   bookmarks, reading streaks, yearly goals and a completion-to-review path
+- Reader account controls with password-confirmed deletion/anonymization
+- Administrator security audit log for registration, login and account-deletion events
 - Admin-only Open Library metadata search and transactional catalogue import
 - Admin-only manual entry for rare or missing books
 - Admin catalogue dashboard for restocking, pricing, availability and curation
@@ -56,10 +58,35 @@ cd backend
 ```bash
 cd frontend
 npm run lint
+npm test
 npm run build
 ```
 
 Health check: `GET http://localhost:8080/api/public/health`.
+
+The frontend tests use Vitest, React Testing Library and jsdom. They cover API
+error/session utilities, authentication form behavior and protected routing.
+Backend tests cover business services, controllers, validation, authentication,
+account deletion and Reading Journey ownership rules.
+
+## Authentication lifecycle
+
+Registration creates a Reader immediately; email verification is intentionally
+outside this academic project's scope. Passwords are BCrypt hashes and are never
+returned by the API. The login UI supports password visibility, preserves the
+requested protected destination and clearly reports expired sessions. A global
+API interceptor clears invalid sessions after a `401` response.
+
+Readers can open `/account` and delete their account after confirming both their
+current password and the word `DELETE`. Akshara removes private uploads and their
+files, Reading Journey data, private notes, goals, cart and wishlist; then it
+disables the account, replaces the password, and anonymizes the reader's name and
+email. Historical orders and public contributions are retained so shared and
+business records remain internally consistent.
+
+Admins can inspect paginated security events at `/admin/audit-logs`. Audit rows
+store an actor snapshot rather than a user foreign key, so registration, login
+success/failure and account deletion remain traceable after anonymization.
 
 ## Administrator account
 
@@ -137,6 +164,8 @@ history after confirmation.
 | `PUT` | `/api/reading-journey/annotations/{id}` | Edit an owned notebook item |
 | `DELETE` | `/api/reading-journey/annotations/{id}` | Delete an owned notebook item |
 | `PUT` | `/api/reading-journey/goal/{year}` | Set the yearly completed-book target |
+| `GET` | `/api/users/me` | Return the current enabled account |
+| `DELETE` | `/api/users/me` | Password-confirm and anonymize/disable the account |
 
 ## Admin API
 
@@ -154,6 +183,7 @@ history after confirmation.
 | `GET` | `/api/admin/orders` | List customer orders for fulfilment |
 | `GET` | `/api/admin/orders/{id}` | View customer, delivery, payment and book details |
 | `PATCH` | `/api/admin/orders/{id}/status` | Advance or cancel an order using validated transitions |
+| `GET` | `/api/admin/audit-logs?page=0&size=25` | Inspect paginated security activity |
 
 Creation returns `201`. Invalid input returns `400`, access failures return
 `401`/`403`, duplicate ISBN/SKU returns `409`, and provider unavailability returns
@@ -164,7 +194,37 @@ items, wishlist entries and reviews. Historical order items keep their immutable
 title, ISBN, format and price snapshots; their optional live-edition link is
 detached before catalogue deletion so order history remains readable.
 
+## Container deployment
+
+The repository includes production-oriented Dockerfiles, an Nginx single-page
+application configuration and Docker Compose for React, Spring Boot and MySQL.
+Hibernate `ddl-auto=update` is deliberately retained in both local and production
+profiles for this project.
+
+```bash
+cp .env.example .env
+# Replace every placeholder secret in .env
+docker compose up --build
+```
+
+Open `http://localhost:8088` (or the `AKSHARA_PORT` selected in `.env`). MySQL,
+private uploads and backend logs use named persistent volumes. Nginx serves the
+React build, falls back to `index.html` for client routes, proxies `/api`, passes
+forwarded client headers and accepts the same 26 MB upload limit as Spring Boot.
+
+Do not commit `.env`; it is ignored by Git. For a public internet deployment,
+place an HTTPS reverse proxy or managed TLS service in front of this stack.
+
+## Digital reader scope
+
+Private PDFs currently open inline in the browser and EPUBs download. The next
+safe increment is an embedded PDF.js reader that reports the visible page to the
+Reading Journey API. A complete EPUB reader is a separate, larger feature because
+EPUB content reflows: progress must use chapters/locations rather than stable PDF
+page numbers. It should not be combined with the first PDF-reader increment.
+
 ## Deferred scope
 
-Seller accounts, external price comparison, AI recommendations, real payment
-gateways, subscriptions and copyrighted eBook distribution are outside the MVP.
+Email verification, password-reset email delivery, seller accounts, external
+price comparison, AI recommendations, real payment gateways, subscriptions and
+copyrighted eBook distribution are outside the MVP.

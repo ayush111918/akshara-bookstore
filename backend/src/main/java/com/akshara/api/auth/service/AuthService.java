@@ -7,6 +7,7 @@ import com.akshara.api.auth.exception.EmailAlreadyExistsException;
 import com.akshara.api.user.entity.AppUser;
 import com.akshara.api.user.entity.Role;
 import com.akshara.api.user.repository.UserRepository;
+import com.akshara.api.audit.service.AuditService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,19 +23,22 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final AuditService auditService;
 
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtService jwtService
+            JwtService jwtService,
+            AuditService auditService
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.auditService = auditService;
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request, String ipAddress, String userAgent) {
         String normalizedName = request.fullName().trim();
         String normalizedEmail = request.email()
                 .trim()
@@ -62,6 +66,9 @@ public class AuthService {
         JwtService.GeneratedToken token =
                 jwtService.generateToken(savedUser);
 
+        auditService.record(savedUser.getId(), savedUser.getEmail(), "ACCOUNT_REGISTERED",
+                "SUCCESS", ipAddress, userAgent, "Reader account created");
+
         return new AuthResponse(
                 token.value(),
                 "Bearer",
@@ -70,25 +77,28 @@ public class AuthService {
         );
     }
     @Transactional(readOnly = true)
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request, String ipAddress, String userAgent) {
         String normalizedEmail = request.email()
                 .trim()
                 .toLowerCase(Locale.ROOT);
 
-        AppUser user = userRepository
-                .findByEmailIgnoreCase(normalizedEmail)
-                .orElseThrow(InvalidCredentialsException::new);
+        AppUser user = userRepository.findByEmailIgnoreCase(normalizedEmail).orElse(null);
 
-        if (!user.isEnabled()
+        if (user == null || !user.isEnabled()
                 || !passwordEncoder.matches(
                 request.password(),
-                user.getPasswordHash()
+                user == null ? "" : user.getPasswordHash()
         )) {
+            auditService.record(user == null ? null : user.getId(), normalizedEmail,
+                    "LOGIN", "FAILURE", ipAddress, userAgent, "Invalid credentials");
             throw new InvalidCredentialsException();
         }
 
         JwtService.GeneratedToken token =
                 jwtService.generateToken(user);
+
+        auditService.record(user.getId(), user.getEmail(), "LOGIN", "SUCCESS",
+                ipAddress, userAgent, "Reader signed in");
 
         return new AuthResponse(
                 token.value(),
