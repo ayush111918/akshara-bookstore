@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface OrderItemRepository
         extends JpaRepository<OrderItem, Long> {
@@ -25,6 +26,17 @@ public interface OrderItemRepository
     List<OrderItem> findAllByOrder_User_IdAndOrder_StatusNotOrderByOrder_PlacedAtDescIdDesc(
             Long userId,
             OrderStatus excludedStatus
+    );
+
+    @EntityGraph(attributePaths = {
+            "order",
+            "bookEdition",
+            "bookEdition.book"
+    })
+    Optional<OrderItem> findFirstByOrder_User_IdAndOrder_StatusAndBookEdition_Book_IdOrderByOrder_PlacedAtDescIdDesc(
+            Long userId,
+            OrderStatus status,
+            Long bookId
     );
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

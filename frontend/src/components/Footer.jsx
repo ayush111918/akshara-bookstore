@@ -16,13 +16,14 @@ function Footer() {
           <div>
             <p className="footer-heading">Explore</p>
             <a href="/#catalogue">Book catalogue</a>
-            <a href="/#journey">Reading journey</a>
+            <Link to="/reading-journey">Reading journey</Link>
             <Link to="/community">Community</Link>
           </div>
 
           <div>
             <p className="footer-heading">For readers</p>
             <Link to="/my-books">My Books</Link>
+            <Link to="/reading-journey">Reading progress</Link>
             <Link to="/wishlist">Wishlist</Link>
             <Link to="/orders">Order history</Link>
             <Link to="/my-reviews">My reviews</Link>

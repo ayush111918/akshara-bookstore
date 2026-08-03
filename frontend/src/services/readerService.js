@@ -128,3 +128,50 @@ export async function updateReviewReply(replyId, content) {
 export async function deleteReviewReply(replyId) {
   await api.delete(`/reviews/replies/${replyId}`)
 }
+
+export async function getReadingDashboard() {
+  const response = await api.get('/reading-journey')
+  return response.data
+}
+
+export async function createReadingEntry(sourceType, sourceId, totalPages) {
+  const response = await api.post('/reading-journey', {
+    sourceType,
+    sourceId,
+    totalPages: totalPages || null,
+  })
+  return response.data
+}
+
+export async function updateReadingProgress(entryId, progress) {
+  const response = await api.put(`/reading-journey/${entryId}/progress`, progress)
+  return response.data
+}
+
+export async function deleteReadingEntry(entryId) {
+  await api.delete(`/reading-journey/${entryId}`)
+}
+
+export async function getReadingAnnotations(entryId) {
+  const response = await api.get(`/reading-journey/${entryId}/annotations`)
+  return response.data
+}
+
+export async function createReadingAnnotation(entryId, annotation) {
+  const response = await api.post(`/reading-journey/${entryId}/annotations`, annotation)
+  return response.data
+}
+
+export async function updateReadingAnnotation(annotationId, annotation) {
+  const response = await api.put(`/reading-journey/annotations/${annotationId}`, annotation)
+  return response.data
+}
+
+export async function deleteReadingAnnotation(annotationId) {
+  await api.delete(`/reading-journey/annotations/${annotationId}`)
+}
+
+export async function updateReadingGoal(year, targetBooks) {
+  const response = await api.put(`/reading-journey/goal/${year}`, { targetBooks })
+  return response.data
+}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getApiErrorMessage } from '../services/api'
 import {
   deletePersonalBook,
@@ -7,6 +7,7 @@ import {
   getPersonalBookFile,
   getPersonalBooks,
   uploadPersonalBook,
+  createReadingEntry,
 } from '../services/readerService'
 import { getCoverTone, getTitleMonogram } from '../utils/bookPresentation'
 
@@ -40,6 +41,7 @@ function MyBookCover({ item }) {
 }
 
 function MyBooksPage() {
+  const navigate = useNavigate()
   const [books, setBooks] = useState([])
   const [uploads, setUploads] = useState([])
   const [filter, setFilter] = useState('ALL')
@@ -49,6 +51,7 @@ function MyBooksPage() {
   const [uploading, setUploading] = useState(false)
   const [uploadMessage, setUploadMessage] = useState('')
   const [busyBookId, setBusyBookId] = useState(null)
+  const [trackingKey, setTrackingKey] = useState(null)
 
   async function loadBooks() {
     setLoading(true)
@@ -152,6 +155,19 @@ function MyBooksPage() {
     }
   }
 
+  async function startReading(sourceType, sourceId, key) {
+    setTrackingKey(key)
+    setUploadMessage('')
+    try {
+      const entry = await createReadingEntry(sourceType, sourceId)
+      navigate(`/reading-journey?entry=${entry.id}`)
+    } catch (requestError) {
+      setUploadMessage(getApiErrorMessage(requestError, 'This book could not be added to your reading journey.'))
+    } finally {
+      setTrackingKey(null)
+    }
+  }
+
   return (
     <section className="inner-page my-books-page">
       <div className="container-xl">
@@ -194,6 +210,7 @@ function MyBooksPage() {
                   <span>{item.author || item.originalFilename}</span>
                   <div className="my-book-progress"><i className="bi bi-shield-lock-fill" /><div><strong>Only visible to you</strong><small>Stored in your Akshara library</small></div></div>
                   <div className="my-book-actions personal-book-actions">
+                    <button disabled={trackingKey === `upload-${item.id}`} type="button" onClick={() => startReading('PERSONAL_UPLOAD', item.id, `upload-${item.id}`)}>{trackingKey === `upload-${item.id}` ? 'Adding…' : 'Track reading'}</button>
                     <button disabled={busyBookId === item.id} type="button" onClick={() => openOrDownload(item, item.format !== 'PDF')}>{item.format === 'PDF' ? 'Open book' : 'Download EPUB'}</button>
                     <button disabled={busyBookId === item.id} type="button" onClick={() => openOrDownload(item, true)}>Download</button>
                     <button className="danger" disabled={busyBookId === item.id} type="button" onClick={() => removeUpload(item)} aria-label={`Remove ${item.title}`}><i className="bi bi-trash" /></button>
@@ -212,6 +229,7 @@ function MyBooksPage() {
                     <span>{item.publisherName || item.editionName || item.isbn || 'Akshara edition'}</span>
                     <div className="my-book-progress"><i className={`bi ${item.orderStatus === 'DELIVERED' ? 'bi-check-circle-fill' : 'bi-box-seam'}`} /><div><strong>{status.detail}</strong><small>Order #{item.orderId}</small></div></div>
                     <div className="my-book-actions">
+                      {item.orderStatus === 'DELIVERED' && item.bookId && <button disabled={trackingKey === `book-${item.bookId}`} type="button" onClick={() => startReading('PURCHASED_BOOK', item.bookId, `book-${item.bookId}`)}>{trackingKey === `book-${item.bookId}` ? 'Adding…' : 'Start reading'}</button>}
                       {item.bookId && <Link to={`/books/${item.bookId}`}>{item.orderStatus === 'DELIVERED' ? 'Open book page' : 'View book'} <i className="bi bi-arrow-right" /></Link>}
                       <Link to={`/orders/${item.orderId}`}>Track order</Link>
                     </div>

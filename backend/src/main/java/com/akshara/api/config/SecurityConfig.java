@@ -65,6 +65,8 @@ public class SecurityConfig {
                                 "/api/checkout/**",
                                 "/api/library",
                                 "/api/library/**",
+                                "/api/reading-journey",
+                                "/api/reading-journey/**",
                                 "/api/orders",
                                 "/api/orders/**"
                         )

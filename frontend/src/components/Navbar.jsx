@@ -50,7 +50,7 @@ function Navbar() {
             </li>
 
             <li className="nav-item">
-              {user?.role === 'READER' ? <Link className="nav-link" to="/my-books">My Books</Link> : <a className="nav-link" href="/#journey">Reading journey</a>}
+              {user?.role === 'READER' ? <Link className="nav-link" to="/reading-journey">Reading journey</Link> : <a className="nav-link" href="/#journey">Reading journey</a>}
             </li>
 
             <li className="nav-item">

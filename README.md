@@ -6,6 +6,9 @@ Akshara – a full-stack online bookstore built with React, Spring Boot, JWT and
 - Public editorial catalogue, search, book details, ratings and reviews
 - JWT Reader/Admin authentication
 - Wishlist, cart, shipping checkout, orders and stock management
+- My Books for delivered purchases and private PDF/EPUB uploads
+- Reading Journey with shelves, page progress, dates, private notes, quotations,
+  bookmarks, reading streaks, yearly goals and a completion-to-review path
 - Admin-only Open Library metadata search and transactional catalogue import
 - Admin-only manual entry for rare or missing books
 - Admin catalogue dashboard for restocking, pricing, availability and curation
@@ -105,6 +108,35 @@ Setting total stock to zero while requesting `IN_STOCK` is normalized to
 
 Readers see these changes in Order History and My Books. Status transitions are
 validated by Spring Boot and cannot be skipped or reversed.
+
+## Reading Journey
+
+Readers open `/my-books` and choose **Start reading** on a delivered purchase or
+**Track reading** on a private upload. `/reading-journey` then provides four
+personal shelves: Want to Read, Reading, Paused and Completed. Progress updates
+record pages and activity dates, which drive current/longest streaks and yearly
+statistics. Notes, quotations and bookmarks are private to their owner. A
+completed catalogue book links back to its public page so the reader can publish
+a review and continue into the community discussion.
+
+Reading records use title, author and cover snapshots. Removing a catalogue item
+or personal file therefore does not silently erase the reader's progress. Removing
+the Reading Journey entry itself also removes its private annotations and activity
+history after confirmation.
+
+## Reader API
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/reading-journey` | Load entries, statistics and the current yearly goal |
+| `POST` | `/api/reading-journey` | Track a delivered purchase or owned private upload |
+| `PUT` | `/api/reading-journey/{id}/progress` | Change shelf, page progress and total pages |
+| `DELETE` | `/api/reading-journey/{id}` | Remove a journey and its private data |
+| `GET` | `/api/reading-journey/{id}/annotations` | List the reader's private notebook items |
+| `POST` | `/api/reading-journey/{id}/annotations` | Add a note, quotation or bookmark |
+| `PUT` | `/api/reading-journey/annotations/{id}` | Edit an owned notebook item |
+| `DELETE` | `/api/reading-journey/annotations/{id}` | Delete an owned notebook item |
+| `PUT` | `/api/reading-journey/goal/{year}` | Set the yearly completed-book target |
 
 ## Admin API
 

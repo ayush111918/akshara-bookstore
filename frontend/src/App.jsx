@@ -17,6 +17,7 @@ import RouteErrorBoundary from './components/RouteErrorBoundary'
 import MyBooksPage from './pages/MyBooksPage'
 import AdminOrdersPage from './pages/AdminOrdersPage'
 import MyReviewsPage from './pages/MyReviewsPage'
+import ReadingJourneyPage from './pages/ReadingJourneyPage'
 
 function App() {
   const location = useLocation()
@@ -40,6 +41,7 @@ function App() {
             <Route path="/orders/:orderId" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
             <Route path="/my-books" element={<ProtectedRoute><MyBooksPage /></ProtectedRoute>} />
             <Route path="/my-reviews" element={<ProtectedRoute><MyReviewsPage /></ProtectedRoute>} />
+            <Route path="/reading-journey" element={<ProtectedRoute><ReadingJourneyPage /></ProtectedRoute>} />
             <Route path="/admin/books/import" element={<AdminRoute><BookImportPage /></AdminRoute>} />
             <Route path="/admin/books" element={<AdminRoute><CatalogueAdminPage /></AdminRoute>} />
             <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
