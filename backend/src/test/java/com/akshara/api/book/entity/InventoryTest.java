@@ -189,6 +189,20 @@ class InventoryTest {
         assertEquals(5, inventory.getStockQuantity());
     }
 
+    @Test
+    void increaseStockShouldRejectIntegerOverflow() {
+        Inventory inventory = createInventory(
+                Integer.MAX_VALUE,
+                AvailabilityStatus.IN_STOCK
+        );
+
+        assertThrows(
+                InvalidRequestException.class,
+                () -> inventory.increaseStock(1)
+        );
+        assertEquals(Integer.MAX_VALUE, inventory.getStockQuantity());
+    }
+
     private Inventory createInventory(
             int stockQuantity,
             AvailabilityStatus availabilityStatus

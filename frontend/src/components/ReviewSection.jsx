@@ -17,7 +17,7 @@ function ReviewSection({ bookId }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const ownReview = useMemo(
-    () => data.reviews.find((review) => review.userId === user?.id),
+    () => data.reviews.find((review) => Number(review.userId) === Number(user?.id)),
     [data.reviews, user],
   )
 
@@ -25,7 +25,7 @@ function ReviewSection({ bookId }) {
     try {
       const nextData = await getBookReviews(bookId)
       setData(nextData)
-      const currentReview = nextData.reviews.find((review) => review.userId === user?.id)
+      const currentReview = nextData.reviews.find((review) => Number(review.userId) === Number(user?.id))
       if (currentReview) {
         setForm({
           rating: currentReview.rating,
@@ -46,7 +46,7 @@ function ReviewSection({ bookId }) {
       .then((nextData) => {
         if (!active) return
         setData(nextData)
-        const currentReview = nextData.reviews.find((review) => review.userId === user?.id)
+        const currentReview = nextData.reviews.find((review) => Number(review.userId) === Number(user?.id))
         if (currentReview) {
           setForm({ rating: currentReview.rating, headline: currentReview.headline ?? '', content: currentReview.content })
         }
@@ -109,6 +109,7 @@ function ReviewSection({ bookId }) {
 
       {user ? (
         <form className="review-form" onSubmit={handleSubmit}>
+          {ownReview && <div className="review-editing-notice"><i className="bi bi-pencil-square" /> You are editing your published review. You can update or delete it here, or from <Link to="/my-reviews">My Reviews</Link>.</div>}
           <div className="rating-picker" aria-label="Rating">
             {[1, 2, 3, 4, 5].map((rating) => (
               <button

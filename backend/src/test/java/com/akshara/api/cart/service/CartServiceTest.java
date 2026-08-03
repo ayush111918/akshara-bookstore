@@ -270,6 +270,28 @@ class CartServiceTest {
     }
 
     @Test
+    void addItemRejectsDigitalEditionWithoutDeliveryEntitlement() {
+        stubAuthenticatedCart();
+        edition.setFormat(BookFormat.EPUB);
+        when(bookEditionRepository.findById(EDITION_ID))
+                .thenReturn(Optional.of(edition));
+
+        assertThatThrownBy(() ->
+                cartService.addItem(
+                        USER_ID.toString(),
+                        new AddCartItemRequest(EDITION_ID, 1)
+                )
+        )
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessage("Digital editions are not available for purchase yet");
+
+        verify(inventoryRepository, never())
+                .findByBookEdition_Id(any());
+        verify(cartItemRepository, never())
+                .save(any(CartItem.class));
+    }
+
+    @Test
     void updateItemRejectsItemNotOwnedByReader() {
         stubAuthenticatedCart();
 

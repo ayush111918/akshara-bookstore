@@ -15,10 +15,11 @@ function ReaderDataProvider({ children }) {
   const { user } = useAuth()
   const [wishlist, setWishlist] = useState([])
   const [cart, setCart] = useState(null)
-  const [loading, setLoading] = useState(Boolean(user))
+  const isReader = user?.role === 'READER'
+  const [loading, setLoading] = useState(Boolean(isReader))
 
   const refresh = useCallback(async () => {
-    if (!user) return
+    if (!isReader) return
     try {
       const [nextWishlist, nextCart] = await Promise.all([getWishlist(), getCart()])
       setWishlist(nextWishlist)
@@ -26,12 +27,12 @@ function ReaderDataProvider({ children }) {
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [isReader])
 
   useEffect(() => {
     let active = true
 
-    if (!user) {
+    if (!isReader) {
       Promise.resolve().then(() => {
         if (!active) return
         setWishlist([])
@@ -52,7 +53,7 @@ function ReaderDataProvider({ children }) {
     }
 
     return () => { active = false }
-  }, [user])
+  }, [isReader])
 
   const toggleWishlist = useCallback(async (book) => {
     const existing = wishlist.find((item) => item.book.id === book.id)

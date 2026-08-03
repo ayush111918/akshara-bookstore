@@ -2,7 +2,11 @@ package com.akshara.api.order.service;
 
 import com.akshara.api.auth.exception.InvalidAccessTokenException;
 import com.akshara.api.common.exception.ResourceNotFoundException;
+import com.akshara.api.book.entity.Book;
+import com.akshara.api.book.entity.BookEdition;
+import com.akshara.api.book.entity.BookFormat;
 import com.akshara.api.order.dto.CheckoutResponse;
+import com.akshara.api.order.dto.LibraryBookResponse;
 import com.akshara.api.order.dto.OrderSummaryResponse;
 import com.akshara.api.order.entity.Order;
 import com.akshara.api.order.entity.OrderItem;
@@ -62,6 +66,12 @@ class OrderQueryServiceTest {
 
     @Mock
     private Payment payment;
+
+    @Mock
+    private BookEdition bookEdition;
+
+    @Mock
+    private Book book;
 
     @Mock
     private CheckoutResponse checkoutResponse;
@@ -195,6 +205,50 @@ class OrderQueryServiceTest {
                 paymentRepository,
                 orderResponseMapper
         );
+    }
+
+    @Test
+    void getLibraryShouldReturnBooksFromNonCancelledOrders() {
+        Instant placedAt = Instant.parse("2026-08-03T08:18:00Z");
+        stubAuthenticatedUser();
+
+        when(orderItemRepository
+                .findAllByOrder_User_IdAndOrder_StatusNotOrderByOrder_PlacedAtDescIdDesc(
+                        USER_ID,
+                        OrderStatus.CANCELLED
+                )).thenReturn(List.of(orderItem));
+        when(orderItem.getId()).thenReturn(501L);
+        when(orderItem.getOrder()).thenReturn(order);
+        when(orderItem.getBookEdition()).thenReturn(bookEdition);
+        when(orderItem.getBookTitle()).thenReturn("The Discovery of India");
+        when(orderItem.getCoverImageUrl()).thenReturn("https://example.test/cover.jpg");
+        when(orderItem.getBookFormat()).thenReturn(BookFormat.PAPERBACK);
+        when(orderItem.getIsbn13()).thenReturn("9780143031031");
+        when(orderItem.getPublisherName()).thenReturn("Penguin");
+        when(orderItem.getQuantity()).thenReturn(1);
+        when(order.getId()).thenReturn(ORDER_ID);
+        when(order.getStatus()).thenReturn(OrderStatus.SHIPPED);
+        when(order.getPlacedAt()).thenReturn(placedAt);
+        when(bookEdition.getId()).thenReturn(201L);
+        when(bookEdition.getBook()).thenReturn(book);
+        when(book.getId()).thenReturn(301L);
+
+        assertThat(orderQueryService.getLibrary(USER_ID.toString()))
+                .containsExactly(new LibraryBookResponse(
+                        501L,
+                        ORDER_ID,
+                        301L,
+                        201L,
+                        "The Discovery of India",
+                        "https://example.test/cover.jpg",
+                        BookFormat.PAPERBACK,
+                        null,
+                        "9780143031031",
+                        "Penguin",
+                        1,
+                        OrderStatus.SHIPPED,
+                        placedAt
+                ));
     }
 
     private void stubAuthenticatedUser() {

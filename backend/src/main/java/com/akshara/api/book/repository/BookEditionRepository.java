@@ -15,6 +15,8 @@ public interface BookEditionRepository
 
     Optional<BookEdition> findByIsbn13(String isbn13);
 
+    Optional<BookEdition> findBySkuIgnoreCase(String sku);
+
     boolean existsByIsbn10(String isbn10);
 
     boolean existsByIsbn13(String isbn13);

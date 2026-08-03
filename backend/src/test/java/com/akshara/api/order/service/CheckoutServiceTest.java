@@ -360,6 +360,35 @@ class CheckoutServiceTest {
                 .deleteAllByCart_Id(anyLong());
     }
 
+    @Test
+    void checkoutRejectsDigitalEditionWithoutDeliveryEntitlement() {
+        edition.setFormat(BookFormat.PDF);
+        CartItem cartItem = new CartItem(cart, edition, 1);
+        Inventory inventory = new Inventory(
+                edition,
+                new BigDecimal("199.00"),
+                1,
+                AvailabilityStatus.IN_STOCK
+        );
+
+        stubAuthenticatedCart();
+        when(cartItemRepository
+                .findAllByCart_IdOrderByCreatedAtAsc(CART_ID))
+                .thenReturn(List.of(cartItem));
+        when(inventoryRepository
+                .findByBookEditionIdForUpdate(EDITION_ID))
+                .thenReturn(Optional.of(inventory));
+
+        assertThatThrownBy(() ->
+                checkoutService.checkout(USER_ID.toString(), checkoutRequest)
+        )
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessage("Digital editions are not available for checkout yet");
+
+        verify(orderRepository, never()).save(any(Order.class));
+        verify(paymentRepository, never()).save(any(Payment.class));
+    }
+
     private void stubAuthenticatedCart() {
         when(userRepository.findById(USER_ID))
                 .thenReturn(Optional.of(user));

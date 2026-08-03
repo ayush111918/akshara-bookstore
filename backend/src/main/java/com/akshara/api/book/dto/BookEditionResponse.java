@@ -14,6 +14,8 @@ public record BookEditionResponse(
         String isbn13,
         LocalDate publicationDate,
         Integer pageCount,
+        String sku,
+        String externalEditionId,
         InventoryResponse inventory,
         Instant createdAt,
         Instant updatedAt

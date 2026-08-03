@@ -30,6 +30,10 @@ import java.time.LocalDate;
                 @UniqueConstraint(
                         name = "uk_book_editions_isbn13",
                         columnNames = "isbn13"
+                ),
+                @UniqueConstraint(
+                        name = "uk_book_editions_sku",
+                        columnNames = "sku"
                 )
         },
         indexes = {
@@ -79,6 +83,12 @@ public class BookEdition {
 
     @Column(name = "page_count")
     private Integer pageCount;
+
+    @Column(nullable = false, length = 100)
+    private String sku;
+
+    @Column(name = "external_edition_id", length = 255)
+    private String externalEditionId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -143,6 +153,14 @@ public class BookEdition {
         return pageCount;
     }
 
+    public String getSku() {
+        return sku;
+    }
+
+    public String getExternalEditionId() {
+        return externalEditionId;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -181,5 +199,13 @@ public class BookEdition {
 
     public void setPageCount(Integer pageCount) {
         this.pageCount = pageCount;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
+    }
+
+    public void setExternalEditionId(String externalEditionId) {
+        this.externalEditionId = externalEditionId;
     }
 }

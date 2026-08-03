@@ -9,12 +9,17 @@ import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
 
 @Entity
 @Table(
         name = "books",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_books_metadata_source_work",
+                columnNames = {"metadata_source", "external_work_id"}
+        ),
         indexes = {
                 @Index(
                         name = "idx_books_title",
@@ -46,6 +51,15 @@ public class Book {
 
     @Column(name = "language_code", length = 10)
     private String languageCode;
+
+    @Column(nullable = false)
+    private boolean featured;
+
+    @Column(name = "metadata_source", length = 30)
+    private String metadataSource;
+
+    @Column(name = "external_work_id", length = 255)
+    private String externalWorkId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -97,6 +111,18 @@ public class Book {
         return languageCode;
     }
 
+    public boolean isFeatured() {
+        return featured;
+    }
+
+    public String getMetadataSource() {
+        return metadataSource;
+    }
+
+    public String getExternalWorkId() {
+        return externalWorkId;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -123,5 +149,17 @@ public class Book {
 
     public void setLanguageCode(String languageCode) {
         this.languageCode = languageCode;
+    }
+
+    public void setFeatured(boolean featured) {
+        this.featured = featured;
+    }
+
+    public void setMetadataSource(String metadataSource) {
+        this.metadataSource = metadataSource;
+    }
+
+    public void setExternalWorkId(String externalWorkId) {
+        this.externalWorkId = externalWorkId;
     }
 }

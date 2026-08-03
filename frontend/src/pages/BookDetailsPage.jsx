@@ -87,6 +87,9 @@ function BookDetailsPage() {
   }
 
   const primaryEdition = getPrimaryEdition(book)
+  const physicalEditions = book.editions?.filter(
+    (edition) => edition.format === 'PAPERBACK' || edition.format === 'HARDCOVER',
+  ) ?? []
   const selectedEdition = book.editions?.find((edition) => edition.id === selectedEditionId) ?? primaryEdition
   const availability = getAvailability(book)
   const selectedAvailable = Boolean(
@@ -221,9 +224,9 @@ function BookDetailsPage() {
             </div>
           </div>
 
-          {book.editions?.length ? (
+          {physicalEditions.length ? (
             <div className="edition-grid">
-              {book.editions.map((edition) => (
+              {physicalEditions.map((edition) => (
                 <label
                   className={`edition-card edition-choice${selectedEdition?.id === edition.id ? ' is-selected' : ''}`}
                   key={edition.id}
@@ -253,7 +256,7 @@ function BookDetailsPage() {
               ))}
             </div>
           ) : (
-            <p className="edition-empty">Edition information will be available soon.</p>
+            <p className="edition-empty">No physical edition is currently available. Digital editions remain unavailable until licensed reader access is configured.</p>
           )}
         </div>
         <ReviewSection bookId={book.id} />

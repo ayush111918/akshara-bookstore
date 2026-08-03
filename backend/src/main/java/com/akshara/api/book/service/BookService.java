@@ -10,10 +10,12 @@ import com.akshara.api.book.dto.InventoryRequest;
 import com.akshara.api.book.dto.InventoryResponse;
 import com.akshara.api.book.dto.PublisherResponse;
 import com.akshara.api.book.entity.Author;
+import com.akshara.api.book.entity.AvailabilityStatus;
 import com.akshara.api.book.entity.Book;
 import com.akshara.api.book.entity.BookAuthor;
 import com.akshara.api.book.entity.BookCategory;
 import com.akshara.api.book.entity.BookEdition;
+import com.akshara.api.book.entity.BookFormat;
 import com.akshara.api.book.entity.Category;
 import com.akshara.api.book.entity.Inventory;
 import com.akshara.api.book.entity.Publisher;
@@ -26,6 +28,10 @@ import com.akshara.api.book.repository.CategoryRepository;
 import com.akshara.api.book.repository.PublisherRepository;
 import com.akshara.api.common.exception.DuplicateResourceException;
 import com.akshara.api.common.exception.ResourceNotFoundException;
+import com.akshara.api.cart.repository.CartItemRepository;
+import com.akshara.api.order.repository.OrderItemRepository;
+import com.akshara.api.review.repository.ReviewRepository;
+import com.akshara.api.wishlist.repository.WishlistItemRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,6 +65,10 @@ public class BookService {
     private final BookCategoryRepository bookCategoryRepository;
     private final BookEditionRepository bookEditionRepository;
     private final InventoryRepository inventoryRepository;
+    private final CartItemRepository cartItemRepository;
+    private final WishlistItemRepository wishlistItemRepository;
+    private final ReviewRepository reviewRepository;
+    private final OrderItemRepository orderItemRepository;
 
     public BookService(
             BookRepository bookRepository,
@@ -68,7 +78,11 @@ public class BookService {
             BookAuthorRepository bookAuthorRepository,
             BookCategoryRepository bookCategoryRepository,
             BookEditionRepository bookEditionRepository,
-            InventoryRepository inventoryRepository
+            InventoryRepository inventoryRepository,
+            CartItemRepository cartItemRepository,
+            WishlistItemRepository wishlistItemRepository,
+            ReviewRepository reviewRepository,
+            OrderItemRepository orderItemRepository
     ) {
         this.bookRepository = bookRepository;
         this.authorRepository = authorRepository;
@@ -78,10 +92,15 @@ public class BookService {
         this.bookCategoryRepository = bookCategoryRepository;
         this.bookEditionRepository = bookEditionRepository;
         this.inventoryRepository = inventoryRepository;
+        this.cartItemRepository = cartItemRepository;
+        this.wishlistItemRepository = wishlistItemRepository;
+        this.reviewRepository = reviewRepository;
+        this.orderItemRepository = orderItemRepository;
     }
 
     @Transactional
     public BookResponse create(BookRequest request) {
+        validateSupportedFormats(request.editions());
         List<Author> authors = findAuthors(request.authorIds());
         List<Category> categories = findCategories(
                 request.categoryIds()
@@ -92,6 +111,7 @@ public class BookService {
         );
 
         validateIsbnUniqueness(request.editions(), null);
+        validateSkuUniqueness(request.editions(), null);
 
         Book book = new Book(request.title().trim());
         applyBookFields(book, request);
@@ -103,6 +123,50 @@ public class BookService {
         createEditions(savedBook, request.editions(), publishers);
 
         return toResponse(savedBook);
+    }
+
+    @Transactional
+    public BookResponse createImported(
+            BookRequest request,
+            String metadataSource,
+            String externalWorkId,
+            String externalEditionId
+    ) {
+        validateSupportedFormats(request.editions());
+        List<Author> authors = findAuthors(request.authorIds());
+        List<Category> categories = findCategories(request.categoryIds());
+        Map<Long, Publisher> publishers = findPublishers(request.editions());
+        validateIsbnUniqueness(request.editions(), null);
+        validateSkuUniqueness(request.editions(), null);
+
+        String source = normalizeOptional(metadataSource);
+        String workId = normalizeOptional(externalWorkId);
+        Book book = source == null || workId == null
+                ? null
+                : bookRepository.findByMetadataSourceAndExternalWorkId(
+                        source, workId
+                ).orElse(null);
+
+        if (book == null) {
+            book = new Book(request.title().trim());
+            book.setMetadataSource(source);
+            book.setExternalWorkId(workId);
+            applyBookFields(book, request);
+            book = bookRepository.save(book);
+            saveAuthorRelationships(book, authors);
+            saveCategoryRelationships(book, categories);
+        } else {
+            applyBookFields(book, request);
+            bookRepository.save(book);
+            replaceAuthorRelationships(book, authors);
+            replaceCategoryRelationships(book, categories);
+        }
+
+        createEditions(
+                book, request.editions(), publishers,
+                normalizeOptional(externalEditionId)
+        );
+        return toResponse(book);
     }
 
     public List<BookResponse> getAll() {
@@ -162,6 +226,7 @@ public class BookService {
             BookRequest request
     ) {
         Book book = findBookById(id);
+        validateSupportedFormats(request.editions());
 
         List<Author> authors = findAuthors(request.authorIds());
         List<Category> categories = findCategories(
@@ -173,6 +238,7 @@ public class BookService {
         );
 
         validateIsbnUniqueness(request.editions(), id);
+        validateSkuUniqueness(request.editions(), id);
 
         applyBookFields(book, request);
         bookRepository.save(book);
@@ -185,8 +251,53 @@ public class BookService {
     }
 
     @Transactional
+    public BookResponse updateFeatured(Long id, boolean featured) {
+        Book book = findBookById(id);
+        book.setFeatured(featured);
+        bookRepository.save(book);
+        return toResponse(book);
+    }
+
+    @Transactional
+    public InventoryResponse updateInventory(
+            Long editionId,
+            InventoryRequest request
+    ) {
+        Inventory inventory = findInventoryForUpdate(editionId);
+        rejectUnsupportedDigitalSale(
+                inventory.getBookEdition().getFormat(), request.active()
+        );
+        inventory.setPrice(request.price());
+        inventory.setStockQuantity(request.stockQuantity());
+        inventory.setAvailabilityStatus(normalizeAvailability(
+                request.stockQuantity(), request.availabilityStatus()
+        ));
+        inventory.setActive(request.active());
+        return toInventoryResponse(inventoryRepository.save(inventory));
+    }
+
+    @Transactional
+    public InventoryResponse restockInventory(
+            Long editionId,
+            int quantity
+    ) {
+        Inventory inventory = findInventoryForUpdate(editionId);
+        inventory.increaseStock(quantity);
+        return toInventoryResponse(inventoryRepository.save(inventory));
+    }
+
+    @Transactional
     public void delete(Long id) {
         Book book = findBookById(id);
+
+        cartItemRepository.deleteAllByBookEdition_Book_Id(id);
+        cartItemRepository.flush();
+        wishlistItemRepository.deleteAllByBook_Id(id);
+        wishlistItemRepository.flush();
+        reviewRepository.deleteAllByBook_Id(id);
+        reviewRepository.flush();
+        orderItemRepository.detachAllByBookId(id);
+        orderItemRepository.flush();
 
         List<BookAuthor> authorLinks =
                 bookAuthorRepository.findAllByBook_Id(id);
@@ -216,6 +327,28 @@ public class BookService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Book not found with id: " + id
                 ));
+    }
+
+    private Inventory findInventoryForUpdate(Long editionId) {
+        if (!bookEditionRepository.existsById(editionId)) {
+            throw new ResourceNotFoundException(
+                    "Book edition not found with id: " + editionId
+            );
+        }
+        return inventoryRepository.findByBookEditionIdForUpdate(editionId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Inventory not found for book edition id: " + editionId
+                ));
+    }
+
+    private AvailabilityStatus normalizeAvailability(
+            int stock,
+            AvailabilityStatus requested
+    ) {
+        return stock == 0
+                && requested == AvailabilityStatus.IN_STOCK
+                ? AvailabilityStatus.OUT_OF_STOCK
+                : requested;
     }
 
     private List<Author> findAuthors(Set<Long> authorIds) {
@@ -303,7 +436,7 @@ public class BookService {
 
         for (BookEditionRequest edition : editions) {
             String isbn10 = normalizeIsbn10(edition.isbn10());
-            String isbn13 = normalizeOptional(edition.isbn13());
+            String isbn13 = normalizeIsbn13(edition.isbn13());
 
             validateIsbn10(
                     isbn10,
@@ -319,6 +452,26 @@ public class BookService {
         }
     }
 
+    private void validateSupportedFormats(List<BookEditionRequest> editions) {
+        for (BookEditionRequest edition : editions) {
+            rejectUnsupportedDigitalSale(
+                    edition.format(), edition.inventory().active()
+            );
+        }
+    }
+
+    private void rejectUnsupportedDigitalSale(
+            BookFormat format,
+            boolean active
+    ) {
+        if (active && format.isDigital()) {
+            throw new com.akshara.api.common.exception.InvalidRequestException(
+                    "Digital editions cannot be activated for sale until "
+                            + "a licensed file and reader entitlement are configured"
+            );
+        }
+    }
+
     private void validateIsbn10(
             String isbn10,
             Long currentBookId,
@@ -326,6 +479,13 @@ public class BookService {
     ) {
         if (isbn10 == null) {
             return;
+        }
+
+        if (!isbn10.matches("^[0-9]{9}[0-9X]$")
+                || !hasValidIsbn10Checksum(isbn10)) {
+            throw new com.akshara.api.common.exception.InvalidRequestException(
+                    "ISBN-10 '" + isbn10 + "' is invalid"
+            );
         }
 
         if (!requestValues.add(isbn10)) {
@@ -357,6 +517,13 @@ public class BookService {
     ) {
         if (isbn13 == null) {
             return;
+        }
+
+        if (!isbn13.matches("^[0-9]{13}$")
+                || !hasValidIsbn13Checksum(isbn13)) {
+            throw new com.akshara.api.common.exception.InvalidRequestException(
+                    "ISBN-13 '" + isbn13 + "' is invalid"
+            );
         }
 
         if (!requestValues.add(isbn13)) {
@@ -394,6 +561,31 @@ public class BookService {
         book.setLanguageCode(
                 normalizeOptional(request.languageCode())
         );
+        book.setFeatured(request.featured());
+    }
+
+    private void validateSkuUniqueness(
+            List<BookEditionRequest> editions,
+            Long currentBookId
+    ) {
+        Set<String> requestValues = new HashSet<>();
+        for (BookEditionRequest edition : editions) {
+            String sku = edition.sku().trim();
+            String comparisonValue = sku.toLowerCase(Locale.ROOT);
+            if (!requestValues.add(comparisonValue)) {
+                throw new DuplicateResourceException(
+                        "SKU '" + sku + "' occurs more than once in the request"
+                );
+            }
+            bookEditionRepository.findBySkuIgnoreCase(sku)
+                    .filter(existing -> currentBookId == null
+                            || !existing.getBook().getId().equals(currentBookId))
+                    .ifPresent(existing -> {
+                        throw new DuplicateResourceException(
+                                "A book edition with SKU '" + sku + "' already exists"
+                        );
+                    });
+        }
     }
 
     private void saveAuthorRelationships(
@@ -526,6 +718,15 @@ public class BookService {
             List<BookEditionRequest> editionRequests,
             Map<Long, Publisher> publishers
     ) {
+        createEditions(book, editionRequests, publishers, null);
+    }
+
+    private void createEditions(
+            Book book,
+            List<BookEditionRequest> editionRequests,
+            Map<Long, Publisher> publishers,
+            String externalEditionId
+    ) {
         for (BookEditionRequest request : editionRequests) {
             BookEdition edition = new BookEdition(
                     book,
@@ -542,9 +743,11 @@ public class BookService {
                     normalizeOptional(request.editionName())
             );
             edition.setIsbn10(normalizeIsbn10(request.isbn10()));
-            edition.setIsbn13(normalizeOptional(request.isbn13()));
+            edition.setIsbn13(normalizeIsbn13(request.isbn13()));
             edition.setPublicationDate(request.publicationDate());
             edition.setPageCount(request.pageCount());
+            edition.setSku(request.sku().trim());
+            edition.setExternalEditionId(externalEditionId);
 
             BookEdition savedEdition =
                     bookEditionRepository.save(edition);
@@ -606,6 +809,9 @@ public class BookService {
                 book.getDescription(),
                 book.getCoverImageUrl(),
                 book.getLanguageCode(),
+                book.isFeatured(),
+                book.getMetadataSource(),
+                book.getExternalWorkId(),
                 authors,
                 categories,
                 editions,
@@ -637,6 +843,8 @@ public class BookService {
                 edition.getIsbn13(),
                 edition.getPublicationDate(),
                 edition.getPageCount(),
+                edition.getSku(),
+                edition.getExternalEditionId(),
                 toInventoryResponse(inventory),
                 edition.getCreatedAt(),
                 edition.getUpdatedAt()
@@ -696,7 +904,34 @@ public class BookService {
 
         return normalized == null
                 ? null
-                : normalized.toUpperCase(Locale.ROOT);
+                : normalized.replaceAll("[-\\s]", "")
+                .toUpperCase(Locale.ROOT);
+    }
+
+    private String normalizeIsbn13(String value) {
+        String normalized = normalizeOptional(value);
+        return normalized == null ? null
+                : normalized.replaceAll("[-\\s]", "");
+    }
+
+    private boolean hasValidIsbn10Checksum(String isbn) {
+        int sum = 0;
+        for (int index = 0; index < 10; index++) {
+            char character = isbn.charAt(index);
+            int value = character == 'X' ? 10 : character - '0';
+            sum += (10 - index) * value;
+        }
+        return sum % 11 == 0;
+    }
+
+    private boolean hasValidIsbn13Checksum(String isbn) {
+        int sum = 0;
+        for (int index = 0; index < 12; index++) {
+            int value = isbn.charAt(index) - '0';
+            sum += value * (index % 2 == 0 ? 1 : 3);
+        }
+        int checkDigit = (10 - (sum % 10)) % 10;
+        return checkDigit == isbn.charAt(12) - '0';
     }
 
     private String normalizeOptional(String value) {

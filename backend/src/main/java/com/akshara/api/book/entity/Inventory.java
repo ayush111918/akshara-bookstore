@@ -191,6 +191,12 @@ public class Inventory {
             );
         }
 
+        if (stockQuantity > Integer.MAX_VALUE - returnedQuantity) {
+            throw new InvalidRequestException(
+                    "Restock quantity exceeds the supported stock limit"
+            );
+        }
+
         stockQuantity += returnedQuantity;
 
         if (availabilityStatus == AvailabilityStatus.OUT_OF_STOCK) {

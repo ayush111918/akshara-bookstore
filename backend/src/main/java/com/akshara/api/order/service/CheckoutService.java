@@ -229,6 +229,12 @@ public class CheckoutService {
             Long editionId =
                     cartItem.getBookEdition().getId();
 
+            if (cartItem.getBookEdition().getFormat().isDigital()) {
+                throw new InvalidRequestException(
+                        "Digital editions are not available for checkout yet"
+                );
+            }
+
             Integer quantity = cartItem.getQuantity();
             Inventory inventory =
                     inventoryByEditionId.get(editionId);

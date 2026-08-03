@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 public record OrderItemResponse(
         Long orderItemId,
         Long bookEditionId,
+        Long bookId,
         String bookTitle,
         String coverImageUrl,
         BookFormat bookFormat,

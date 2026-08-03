@@ -72,6 +72,12 @@ public class CartService {
                                 + " was not found"
                 ));
 
+        if (edition.getFormat().isDigital()) {
+            throw new InvalidRequestException(
+                    "Digital editions are not available for purchase yet"
+            );
+        }
+
         CartItem item = cartItemRepository
                 .findByCart_IdAndBookEdition_Id(
                         cart.getId(),

@@ -2,6 +2,7 @@ package com.akshara.api.review.controller;
 
 import com.akshara.api.review.dto.BookReviewsResponse;
 import com.akshara.api.review.dto.ReviewResponse;
+import com.akshara.api.review.dto.ReviewReplyResponse;
 import com.akshara.api.review.service.ReviewService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -36,5 +37,10 @@ public class PublicReviewController {
             @RequestParam(defaultValue = "6") @Min(1) @Max(20) int limit
     ) {
         return reviewService.getRecent(limit);
+    }
+
+    @GetMapping("/reviews/{reviewId}/replies")
+    public List<ReviewReplyResponse> getReplies(@PathVariable @Positive Long reviewId) {
+        return reviewService.getReplies(reviewId);
     }
 }

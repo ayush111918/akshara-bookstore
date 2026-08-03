@@ -52,6 +52,9 @@ public record BookRequest(
         )
         String languageCode,
 
+        @NotNull(message = "Featured status is required")
+        Boolean featured,
+
         @NotEmpty(message = "At least one author is required")
         Set<
                 @NotNull(message = "Author ID must not be null")

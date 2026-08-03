@@ -63,6 +63,8 @@ public class SecurityConfig {
                                 "/api/reviews/**",
                                 "/api/checkout",
                                 "/api/checkout/**",
+                                "/api/library",
+                                "/api/library/**",
                                 "/api/orders",
                                 "/api/orders/**"
                         )

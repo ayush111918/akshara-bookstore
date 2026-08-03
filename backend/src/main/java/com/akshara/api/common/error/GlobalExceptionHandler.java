@@ -7,6 +7,8 @@ import com.akshara.api.auth.exception.InvalidAccessTokenException;
 import com.akshara.api.auth.exception.InvalidCredentialsException;
 import com.akshara.api.common.exception.DuplicateResourceException;
 import com.akshara.api.common.exception.ResourceNotFoundException;
+import com.akshara.api.bookimport.exception.ExternalCatalogueException;
+import com.akshara.api.library.exception.PersonalLibraryStorageException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.validation.method.ParameterErrors;
@@ -25,6 +28,45 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleMaximumUploadSize(
+            MaxUploadSizeExceededException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.PAYLOAD_TOO_LARGE,
+                "Personal book files must be 25 MB or smaller",
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(PersonalLibraryStorageException.class)
+    public ResponseEntity<ApiErrorResponse> handlePersonalLibraryStorage(
+            PersonalLibraryStorageException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(ExternalCatalogueException.class)
+    public ResponseEntity<ApiErrorResponse> handleExternalCatalogue(
+            ExternalCatalogueException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<ApiErrorResponse> handleDuplicateEmail(

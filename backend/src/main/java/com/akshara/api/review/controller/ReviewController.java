@@ -4,6 +4,8 @@ import com.akshara.api.review.dto.ReviewRequest;
 import com.akshara.api.review.dto.ReviewResponse;
 import com.akshara.api.review.dto.UpdateReviewRequest;
 import com.akshara.api.review.service.ReviewService;
+import com.akshara.api.review.dto.ReviewReplyRequest;
+import com.akshara.api.review.dto.ReviewReplyResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -28,6 +33,11 @@ public class ReviewController {
 
     public ReviewController(ReviewService reviewService) {
         this.reviewService = reviewService;
+    }
+
+    @GetMapping("/me")
+    public List<ReviewResponse> getMine(@AuthenticationPrincipal Jwt jwt) {
+        return reviewService.getMine(jwt.getSubject());
     }
 
     @PostMapping
@@ -54,6 +64,34 @@ public class ReviewController {
             @PathVariable @Positive Long reviewId
     ) {
         reviewService.delete(jwt.getSubject(), reviewId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{reviewId}/replies")
+    public ResponseEntity<ReviewReplyResponse> createReply(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable @Positive Long reviewId,
+            @Valid @RequestBody ReviewReplyRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reviewService.createReply(jwt.getSubject(), reviewId, request));
+    }
+
+    @PutMapping("/replies/{replyId}")
+    public ReviewReplyResponse updateReply(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable @Positive Long replyId,
+            @Valid @RequestBody ReviewReplyRequest request
+    ) {
+        return reviewService.updateReply(jwt.getSubject(), replyId, request);
+    }
+
+    @DeleteMapping("/replies/{replyId}")
+    public ResponseEntity<Void> deleteReply(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable @Positive Long replyId
+    ) {
+        reviewService.deleteReply(jwt.getSubject(), replyId);
         return ResponseEntity.noContent().build();
     }
 }

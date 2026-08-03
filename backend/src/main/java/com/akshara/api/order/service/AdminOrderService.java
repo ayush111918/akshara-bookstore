@@ -139,6 +139,9 @@ public class AdminOrderService {
                 new TreeMap<>();
 
         for (OrderItem orderItem : orderItems) {
+            if (orderItem.getBookEdition() == null) {
+                continue;
+            }
             Long editionId =
                     orderItem.getBookEdition().getId();
 

@@ -22,8 +22,10 @@ function Footer() {
 
           <div>
             <p className="footer-heading">For readers</p>
+            <Link to="/my-books">My Books</Link>
             <Link to="/wishlist">Wishlist</Link>
             <Link to="/orders">Order history</Link>
+            <Link to="/my-reviews">My reviews</Link>
             <Link to="/community">Reader reviews</Link>
           </div>
 

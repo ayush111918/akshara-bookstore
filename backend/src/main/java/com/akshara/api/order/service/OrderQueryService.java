@@ -3,9 +3,11 @@ package com.akshara.api.order.service;
 import com.akshara.api.auth.exception.InvalidAccessTokenException;
 import com.akshara.api.common.exception.ResourceNotFoundException;
 import com.akshara.api.order.dto.CheckoutResponse;
+import com.akshara.api.order.dto.LibraryBookResponse;
 import com.akshara.api.order.dto.OrderSummaryResponse;
 import com.akshara.api.order.entity.Order;
 import com.akshara.api.order.entity.OrderItem;
+import com.akshara.api.order.entity.OrderStatus;
 import com.akshara.api.order.entity.Payment;
 import com.akshara.api.order.repository.OrderItemRepository;
 import com.akshara.api.order.repository.OrderRepository;
@@ -83,6 +85,40 @@ public class OrderQueryService {
                 order,
                 orderItems,
                 payment
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<LibraryBookResponse> getLibrary(String subject) {
+        AppUser user = getAuthenticatedUser(subject);
+
+        return orderItemRepository
+                .findAllByOrder_User_IdAndOrder_StatusNotOrderByOrder_PlacedAtDescIdDesc(
+                        user.getId(),
+                        OrderStatus.CANCELLED
+                )
+                .stream()
+                .map(this::toLibraryBookResponse)
+                .toList();
+    }
+
+    private LibraryBookResponse toLibraryBookResponse(OrderItem item) {
+        var edition = item.getBookEdition();
+
+        return new LibraryBookResponse(
+                item.getId(),
+                item.getOrder().getId(),
+                edition == null ? null : edition.getBook().getId(),
+                edition == null ? null : edition.getId(),
+                item.getBookTitle(),
+                item.getCoverImageUrl(),
+                item.getBookFormat(),
+                item.getEditionName(),
+                item.getIsbn13() == null ? item.getIsbn10() : item.getIsbn13(),
+                item.getPublisherName(),
+                item.getQuantity(),
+                item.getOrder().getStatus(),
+                item.getOrder().getPlacedAt()
         );
     }
 

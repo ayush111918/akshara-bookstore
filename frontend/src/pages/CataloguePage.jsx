@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import BookCard from '../components/BookCard'
 import { getBooks } from '../services/bookService'
 import { getRecentReviews } from '../services/readerService'
+import useAuth from '../hooks/useAuth'
 
 const categories = [
   { name: 'Fiction', icon: 'bi-stars' },
@@ -14,14 +15,15 @@ const categories = [
 ]
 
 const journeySteps = [
-  { number: '01', title: 'Discover', text: 'Find books through ideas, moods, genres, and curated shelves.' },
-  { number: '02', title: 'Evaluate', text: 'Understand a book through details, editions, ratings, and reviews.' },
-  { number: '03', title: 'Organize', text: 'Shape a personal library with wishlists and reading statuses.' },
-  { number: '04', title: 'Connect', text: 'Exchange perspectives through discussions and reader collections.' },
-  { number: '05', title: 'Purchase', text: 'Choose an edition and complete the journey in one place.' },
+  { number: '01', title: 'Discover', text: 'Find books through ideas, moods, genres, and curated shelves.', href: '#catalogue', action: 'Explore books' },
+  { number: '02', title: 'Evaluate', text: 'Understand a book through details, editions, ratings, and reviews.', href: '#catalogue', action: 'Choose a book' },
+  { number: '03', title: 'Organize', text: 'Shape a personal library with wishlists and reading statuses.', to: '/wishlist', adminTo: '/admin/books', action: 'Open wishlist', adminAction: 'Manage catalogue' },
+  { number: '04', title: 'Connect', text: 'Exchange perspectives through discussions and reader collections.', to: '/community', action: 'Join the community' },
+  { number: '05', title: 'Purchase', text: 'Choose an edition and complete the journey in one place.', to: '/cart', adminTo: '/admin/books', action: 'Open your cart', adminAction: 'Manage inventory' },
 ]
 
 function CataloguePage() {
+  const { user } = useAuth()
   const [books, setBooks] = useState([])
   const [search, setSearch] = useState('')
   const [appliedQuery, setAppliedQuery] = useState('')
@@ -279,13 +281,23 @@ function CataloguePage() {
           </div>
 
           <div className="journey-steps">
-            {journeySteps.map((step) => (
-              <article key={step.number}>
+            {journeySteps.map((step) => {
+              const isAdmin = user?.role === 'ADMIN'
+              const destination = isAdmin && step.adminTo ? step.adminTo : step.to
+              const action = isAdmin && step.adminAction ? step.adminAction : step.action
+              return (
+              <article key={step.number} className="journey-step">
                 <span>{step.number}</span>
                 <h3>{step.title}</h3>
                 <p>{step.text}</p>
+                {step.href ? (
+                  <a className="journey-step-link" href={step.href}>{action} <i className="bi bi-arrow-right" /></a>
+                ) : (
+                  <Link className="journey-step-link" to={destination}>{action} <i className="bi bi-arrow-right" /></Link>
+                )}
               </article>
-            ))}
+              )
+            })}
           </div>
         </div>
       </section>

@@ -3,12 +3,17 @@ const coverTones = ['navy', 'forest', 'saffron', 'clay', 'plum', 'teal']
 export function getPrimaryEdition(book) {
   if (!book?.editions?.length) return null
 
+  const physicalEditions = book.editions.filter(
+    (edition) => edition.format === 'PAPERBACK' || edition.format === 'HARDCOVER',
+  )
+
   return (
-    book.editions.find(
+    physicalEditions.find(
       (edition) => edition.inventory?.active && edition.inventory?.stockQuantity > 0,
     ) ??
-    book.editions.find((edition) => edition.inventory?.active) ??
-    book.editions[0]
+    physicalEditions.find((edition) => edition.inventory?.active) ??
+    physicalEditions[0] ??
+    null
   )
 }
 

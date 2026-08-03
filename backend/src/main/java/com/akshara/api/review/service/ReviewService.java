@@ -8,8 +8,12 @@ import com.akshara.api.review.dto.BookReviewsResponse;
 import com.akshara.api.review.dto.ReviewRequest;
 import com.akshara.api.review.dto.ReviewResponse;
 import com.akshara.api.review.dto.UpdateReviewRequest;
+import com.akshara.api.review.dto.ReviewReplyRequest;
+import com.akshara.api.review.dto.ReviewReplyResponse;
 import com.akshara.api.review.entity.Review;
+import com.akshara.api.review.entity.ReviewReply;
 import com.akshara.api.review.repository.ReviewRepository;
+import com.akshara.api.review.repository.ReviewReplyRepository;
 import com.akshara.api.user.entity.AppUser;
 import com.akshara.api.user.service.UserService;
 import org.springframework.data.domain.PageRequest;
@@ -25,15 +29,18 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final BookRepository bookRepository;
     private final UserService userService;
+    private final ReviewReplyRepository reviewReplyRepository;
 
     public ReviewService(
             ReviewRepository reviewRepository,
             BookRepository bookRepository,
-            UserService userService
+            UserService userService,
+            ReviewReplyRepository reviewReplyRepository
     ) {
         this.reviewRepository = reviewRepository;
         this.bookRepository = bookRepository;
         this.userService = userService;
+        this.reviewReplyRepository = reviewReplyRepository;
     }
 
     @Transactional(readOnly = true)
@@ -63,6 +70,42 @@ public class ReviewService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> getMine(String subject) {
+        AppUser user = userService.getCurrentUserEntity(subject);
+        return reviewRepository.findAllByUser_IdOrderByUpdatedAtDesc(user.getId())
+                .stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewReplyResponse> getReplies(Long reviewId) {
+        if (!reviewRepository.existsById(reviewId)) {
+            throw new ResourceNotFoundException("Review with ID " + reviewId + " was not found");
+        }
+        return reviewReplyRepository.findAllByReview_IdOrderByCreatedAtAsc(reviewId)
+                .stream().map(this::toReplyResponse).toList();
+    }
+
+    public ReviewReplyResponse createReply(String subject, Long reviewId, ReviewReplyRequest request) {
+        AppUser user = userService.getCurrentUserEntity(subject);
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review with ID " + reviewId + " was not found"));
+        ReviewReply reply = new ReviewReply(review, user, request.content().trim());
+        return toReplyResponse(reviewReplyRepository.save(reply));
+    }
+
+    public ReviewReplyResponse updateReply(String subject, Long replyId, ReviewReplyRequest request) {
+        AppUser user = userService.getCurrentUserEntity(subject);
+        ReviewReply reply = findOwnedReply(replyId, user.getId());
+        reply.update(request.content().trim());
+        return toReplyResponse(reviewReplyRepository.save(reply));
+    }
+
+    public void deleteReply(String subject, Long replyId) {
+        AppUser user = userService.getCurrentUserEntity(subject);
+        reviewReplyRepository.delete(findOwnedReply(replyId, user.getId()));
     }
 
     public ReviewResponse create(String subject, ReviewRequest request) {
@@ -114,6 +157,12 @@ public class ReviewService {
                 ));
     }
 
+    private ReviewReply findOwnedReply(Long replyId, Long userId) {
+        return reviewReplyRepository.findById(replyId)
+                .filter(reply -> reply.getUser().getId().equals(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("Discussion reply with ID " + replyId + " was not found"));
+    }
+
     private String normalizeHeadline(String headline) {
         if (headline == null || headline.isBlank()) {
             return null;
@@ -134,6 +183,13 @@ public class ReviewService {
                 review.getContent(),
                 review.getCreatedAt(),
                 review.getUpdatedAt()
+        );
+    }
+
+    private ReviewReplyResponse toReplyResponse(ReviewReply reply) {
+        return new ReviewReplyResponse(
+                reply.getId(), reply.getReview().getId(), reply.getUser().getId(),
+                reply.getUser().getFullName(), reply.getContent(), reply.getCreatedAt(), reply.getUpdatedAt()
         );
     }
 }

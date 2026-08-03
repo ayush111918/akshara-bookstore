@@ -29,4 +29,6 @@ public interface CartItemRepository
     );
 
     void deleteAllByCart_Id(Long cartId);
+
+    void deleteAllByBookEdition_Book_Id(Long bookId);
 }

@@ -49,6 +49,38 @@ export async function getOrder(orderId) {
   return response.data
 }
 
+export async function getMyBooks() {
+  const response = await api.get('/library')
+  return response.data
+}
+
+export async function getPersonalBooks() {
+  const response = await api.get('/library/uploads')
+  return response.data
+}
+
+export async function uploadPersonalBook({ title, author, file }) {
+  const form = new FormData()
+  form.append('title', title)
+  if (author) form.append('author', author)
+  form.append('file', file)
+  const response = await api.post('/library/uploads', form, { timeout: 60000 })
+  return response.data
+}
+
+export async function getPersonalBookFile(bookId, download = false) {
+  const response = await api.get(`/library/uploads/${bookId}/file`, {
+    params: { disposition: download ? 'attachment' : 'inline' },
+    responseType: 'blob',
+    timeout: 60000,
+  })
+  return response.data
+}
+
+export async function deletePersonalBook(bookId) {
+  await api.delete(`/library/uploads/${bookId}`)
+}
+
 export async function getBookReviews(bookId) {
   const response = await api.get(`/public/books/${bookId}/reviews`)
   return response.data
@@ -71,4 +103,28 @@ export async function updateReview(reviewId, review) {
 
 export async function deleteReview(reviewId) {
   await api.delete(`/reviews/${reviewId}`)
+}
+
+export async function getMyReviews() {
+  const response = await api.get('/reviews/me')
+  return response.data
+}
+
+export async function getReviewReplies(reviewId) {
+  const response = await api.get(`/public/reviews/${reviewId}/replies`)
+  return response.data
+}
+
+export async function createReviewReply(reviewId, content) {
+  const response = await api.post(`/reviews/${reviewId}/replies`, { content })
+  return response.data
+}
+
+export async function updateReviewReply(replyId, content) {
+  const response = await api.put(`/reviews/replies/${replyId}`, { content })
+  return response.data
+}
+
+export async function deleteReviewReply(replyId) {
+  await api.delete(`/reviews/replies/${replyId}`)
 }

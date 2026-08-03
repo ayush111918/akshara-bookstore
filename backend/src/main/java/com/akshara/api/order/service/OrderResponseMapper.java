@@ -49,7 +49,12 @@ public class OrderResponseMapper {
     ) {
         return new OrderItemResponse(
                 orderItem.getId(),
-                orderItem.getBookEdition().getId(),
+                orderItem.getBookEdition() == null
+                        ? null
+                        : orderItem.getBookEdition().getId(),
+                orderItem.getBookEdition() == null
+                        ? null
+                        : orderItem.getBookEdition().getBook().getId(),
                 orderItem.getBookTitle(),
                 orderItem.getCoverImageUrl(),
                 orderItem.getBookFormat(),

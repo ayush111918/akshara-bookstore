@@ -12,9 +12,8 @@ public record InventoryRequest(
 
         @NotNull(message = "Price is required")
         @DecimalMin(
-                value = "0.00",
-                inclusive = true,
-                message = "Price must not be negative"
+                value = "0.01",
+                message = "Price must be greater than zero"
         )
         @Digits(
                 integer = 8,
