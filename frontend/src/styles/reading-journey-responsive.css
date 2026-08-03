@@ -13,7 +13,8 @@
     border-bottom: 1px solid #e4d9ca;
   }
 
-  .reading-workspace {
+  .reading-workspace,
+  .reading-workspace.has-notebook {
     grid-template-columns: 1fr;
   }
 
@@ -69,6 +70,17 @@
 
   .reading-goal-card {
     grid-template-columns: 1fr;
+  }
+
+  .reading-focus-bar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .reading-focus-bar button {
+    justify-content: center;
+    width: 100%;
   }
 
   .reading-goal-ring {

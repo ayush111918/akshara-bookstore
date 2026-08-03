@@ -44,7 +44,7 @@ function ReadingJourneyPage() {
     }])))
     const requestedId = Number(searchParams.get('entry'))
     const requested = data.entries.find((entry) => entry.id === requestedId)
-    setSelectedId((current) => requested?.id || (data.entries.some((entry) => entry.id === current) ? current : data.entries[0]?.id || null))
+    setSelectedId((current) => requested?.id || (data.entries.some((entry) => entry.id === current) ? current : null))
   }
 
   async function loadDashboard() {
@@ -135,10 +135,22 @@ function ReadingJourneyPage() {
   }
 
   function chooseEntry(entryId) {
+    if (selectedId === entryId) {
+      closeFocusedEntry()
+      return
+    }
     setAnnotations([])
     setAnnotationsLoading(true)
     setSelectedId(entryId)
     setSearchParams({ entry: String(entryId) })
+    setAnnotationDraft(EMPTY_ANNOTATION)
+    setEditingAnnotationId(null)
+  }
+
+  function closeFocusedEntry() {
+    setSelectedId(null)
+    setSearchParams({})
+    setAnnotations([])
     setAnnotationDraft(EMPTY_ANNOTATION)
     setEditingAnnotationId(null)
   }
@@ -240,23 +252,30 @@ function ReadingJourneyPage() {
               <div className="empty-reader-page reading-empty"><i className="bi bi-bookmark-star" /><h2>Your first reading journey starts in My Books</h2><p>Choose a delivered book or a private upload, then select Start reading.</p><Link className="btn btn-ink" to="/my-books">Open My Books</Link></div>
             ) : (
               <>
-                <div className="reading-filter-bar" role="group" aria-label="Filter reading journey">
-                  {READING_FILTERS.map((item) => {
-                    const count = item.value === 'ALL' ? dashboard.entries.length : dashboard.entries.filter((entry) => entry.status === item.value).length
-                    return <button type="button" className={`reading-filter-${item.value.toLowerCase()}${filter === item.value ? ' is-active' : ''}`} onClick={() => setFilter(item.value)} key={item.value}>{item.label}<span>{count}</span></button>
-                  })}
-                </div>
+                {selectedEntry ? (
+                  <div className="reading-focus-bar">
+                    <span><i className="bi bi-journal-bookmark-fill" /><span><strong>Focused reading workspace</strong><small>{selectedEntry.title} and its private notebook</small></span></span>
+                    <button type="button" onClick={closeFocusedEntry}><i className="bi bi-arrow-left" /> Back to all books</button>
+                  </div>
+                ) : (
+                  <div className="reading-filter-bar" role="group" aria-label="Filter reading journey">
+                    {READING_FILTERS.map((item) => {
+                      const count = item.value === 'ALL' ? dashboard.entries.length : dashboard.entries.filter((entry) => entry.status === item.value).length
+                      return <button type="button" className={`reading-filter-${item.value.toLowerCase()}${filter === item.value ? ' is-active' : ''}`} onClick={() => setFilter(item.value)} key={item.value}>{item.label}<span>{count}</span></button>
+                    })}
+                  </div>
+                )}
 
-                <div className="reading-workspace">
+                <div className={`reading-workspace${selectedEntry ? ' has-notebook' : ''}`}>
                   <div className="reading-entry-list">
-                    {visibleEntries.map((entry) => {
+                    {(selectedEntry ? [selectedEntry] : visibleEntries).map((entry) => {
                       const draft = drafts[entry.id] || {}
                       return <ReadingEntryCard key={entry.id} entry={entry} draft={draft} selected={selectedId === entry.id} busy={busyId === entry.id} onChoose={() => chooseEntry(entry.id)} onDraftChange={(field, value) => updateDraft(entry.id, field, value)} onSave={(event) => saveProgress(event, entry)} onRemove={() => removeEntry(entry)} />
                     })}
-                    {visibleEntries.length === 0 && <div className="reading-filter-empty"><h2>No books in this shelf</h2><p>Choose another reading status.</p></div>}
+                    {!selectedEntry && visibleEntries.length === 0 && <div className="reading-filter-empty"><h2>No books in this shelf</h2><p>Choose another reading status.</p></div>}
                   </div>
 
-                  <ReadingNotebook entry={selectedEntry} draft={annotationDraft} setDraft={setAnnotationDraft} editingId={editingAnnotationId} busy={annotationBusy} loading={annotationsLoading} annotations={annotations} onSave={saveAnnotation} onEdit={editAnnotation} onDelete={removeAnnotation} onCancel={() => { setEditingAnnotationId(null); setAnnotationDraft(EMPTY_ANNOTATION) }} />
+                  {selectedEntry && <ReadingNotebook entry={selectedEntry} draft={annotationDraft} setDraft={setAnnotationDraft} editingId={editingAnnotationId} busy={annotationBusy} loading={annotationsLoading} annotations={annotations} onSave={saveAnnotation} onEdit={editAnnotation} onDelete={removeAnnotation} onCancel={() => { setEditingAnnotationId(null); setAnnotationDraft(EMPTY_ANNOTATION) }} />}
                 </div>
               </>
             )}

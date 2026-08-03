@@ -32,4 +32,18 @@ describe('ReadingEntryCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save progress' }))
     expect(onSave).toHaveBeenCalledOnce()
   })
+
+  it('moves a not-started book to Reading when page progress is entered', () => {
+    const onDraftChange = vi.fn()
+    render(
+      <MemoryRouter>
+        <ReadingEntryCard entry={{ ...entry, status: 'NOT_STARTED', currentPage: 0, startedOn: null }} draft={{ status: 'NOT_STARTED', currentPage: '0', totalPages: '300' }} selected={false} busy={false} onChoose={vi.fn()} onDraftChange={onDraftChange} onSave={vi.fn()} onRemove={vi.fn()} />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('Current page'), { target: { value: '8' } })
+    expect(onDraftChange).toHaveBeenCalledWith('currentPage', '8')
+    expect(onDraftChange).toHaveBeenCalledWith('status', 'READING')
+    expect(screen.getByText('Not started yet')).toBeInTheDocument()
+  })
 })

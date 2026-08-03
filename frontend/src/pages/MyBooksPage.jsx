@@ -6,6 +6,7 @@ import {
   getMyBooks,
   getPersonalBookFile,
   getPersonalBooks,
+  getReadingDashboard,
   uploadPersonalBook,
   createReadingEntry,
 } from '../services/readerService'
@@ -31,6 +32,14 @@ function formatFileSize(bytes) {
   return `${(Number(bytes) / 1024 / 1024).toFixed(1)} MB`
 }
 
+function readingAction(entry, emptyLabel = 'Start reading') {
+  if (!entry) return { label: emptyLabel, icon: 'bi-book-half' }
+  if (entry.status === 'READING') return { label: 'Continue reading', icon: 'bi-book-open' }
+  if (entry.status === 'PAUSED') return { label: 'Resume reading', icon: 'bi-play-circle' }
+  if (entry.status === 'COMPLETED') return { label: 'Review journey', icon: 'bi-check-circle' }
+  return { label: 'Begin reading', icon: 'bi-book-half' }
+}
+
 function MyBookCover({ item }) {
   if (item.coverImageUrl) return <img src={item.coverImageUrl} alt={`Cover of ${item.title}`} />
   return (
@@ -44,6 +53,7 @@ function MyBooksPage() {
   const navigate = useNavigate()
   const [books, setBooks] = useState([])
   const [uploads, setUploads] = useState([])
+  const [readingEntries, setReadingEntries] = useState([])
   const [filter, setFilter] = useState('ALL')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -57,9 +67,10 @@ function MyBooksPage() {
     setLoading(true)
     setError('')
     try {
-      const [purchased, personal] = await Promise.all([getMyBooks(), getPersonalBooks()])
+      const [purchased, personal, reading] = await Promise.all([getMyBooks(), getPersonalBooks(), getReadingDashboard()])
       setBooks(purchased)
       setUploads(personal)
+      setReadingEntries(reading.entries || [])
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, 'Your books could not be loaded.'))
     } finally {
@@ -69,11 +80,12 @@ function MyBooksPage() {
 
   useEffect(() => {
     let active = true
-    Promise.all([getMyBooks(), getPersonalBooks()])
-      .then(([purchased, personal]) => {
+    Promise.all([getMyBooks(), getPersonalBooks(), getReadingDashboard()])
+      .then(([purchased, personal, reading]) => {
         if (!active) return
         setBooks(purchased)
         setUploads(personal)
+        setReadingEntries(reading.entries || [])
       })
       .catch((requestError) => { if (active) setError(getApiErrorMessage(requestError, 'Your books could not be loaded.')) })
       .finally(() => { if (active) setLoading(false) })
@@ -88,6 +100,9 @@ function MyBooksPage() {
   }), [books, filter])
   const visibleUploads = filter === 'IN_TRANSIT' || filter === 'DELIVERED' ? [] : uploads
   const visibleCount = visiblePurchased.length + visibleUploads.length
+  const readingEntryBySource = useMemo(() => new Map(
+    readingEntries.map((entry) => [`${entry.sourceType}-${entry.sourceId}`, entry]),
+  ), [readingEntries])
 
   async function handleUpload(event) {
     event.preventDefault()
@@ -155,7 +170,11 @@ function MyBooksPage() {
     }
   }
 
-  async function startReading(sourceType, sourceId, key) {
+  async function openReadingJourney(sourceType, sourceId, key, existingEntry) {
+    if (existingEntry) {
+      navigate(`/reading-journey?entry=${existingEntry.id}`)
+      return
+    }
     setTrackingKey(key)
     setUploadMessage('')
     try {
@@ -201,8 +220,10 @@ function MyBooksPage() {
         {!loading && error && <div className="catalogue-message catalogue-error"><span><i className="bi bi-exclamation-circle" /></span><div><h2>We could not open your library</h2><p>{error}</p><button className="btn btn-ink" type="button" onClick={loadBooks}>Try again</button></div></div>}
         {!loading && !error && visibleCount > 0 && (
           <div className="my-books-grid">
-            {visibleUploads.map((item) => (
-              <article className="my-book-card personal-book-card" key={`upload-${item.id}`}>
+            {visibleUploads.map((item) => {
+              const readingEntry = readingEntryBySource.get(`PERSONAL_UPLOAD-${item.id}`)
+              const action = readingAction(readingEntry, 'Track reading')
+              return <article className="my-book-card personal-book-card" key={`upload-${item.id}`}>
                 <div className="my-book-cover"><MyBookCover item={item} /><span className="my-book-status status-uploaded">Private upload</span></div>
                 <div className="my-book-copy">
                   <p>{item.format} · {formatFileSize(item.fileSize)}</p>
@@ -210,16 +231,18 @@ function MyBooksPage() {
                   <span>{item.author || item.originalFilename}</span>
                   <div className="my-book-progress"><i className="bi bi-shield-lock-fill" /><div><strong>Only visible to you</strong><small>Stored in your Akshara library</small></div></div>
                   <div className="my-book-actions personal-book-actions">
-                    <button disabled={trackingKey === `upload-${item.id}`} type="button" onClick={() => startReading('PERSONAL_UPLOAD', item.id, `upload-${item.id}`)}>{trackingKey === `upload-${item.id}` ? 'Adding…' : 'Track reading'}</button>
+                    <button disabled={trackingKey === `upload-${item.id}`} type="button" onClick={() => openReadingJourney('PERSONAL_UPLOAD', item.id, `upload-${item.id}`, readingEntry)}><i className={`bi ${action.icon}`} /> {trackingKey === `upload-${item.id}` ? 'Adding…' : action.label}</button>
                     <button disabled={busyBookId === item.id} type="button" onClick={() => openOrDownload(item, item.format !== 'PDF')}>{item.format === 'PDF' ? 'Open book' : 'Download EPUB'}</button>
                     <button disabled={busyBookId === item.id} type="button" onClick={() => openOrDownload(item, true)}>Download</button>
                     <button className="danger" disabled={busyBookId === item.id} type="button" onClick={() => removeUpload(item)} aria-label={`Remove ${item.title}`}><i className="bi bi-trash" /></button>
                   </div>
                 </div>
               </article>
-            ))}
+            })}
             {visiblePurchased.map((item) => {
               const status = statusCopy(item.orderStatus)
+              const readingEntry = readingEntryBySource.get(`PURCHASED_BOOK-${item.bookId}`)
+              const action = readingAction(readingEntry)
               return (
                 <article className="my-book-card" key={`order-${item.orderItemId}`}>
                   <div className="my-book-cover"><MyBookCover item={item} /><span className={`my-book-status status-${status.tone}`}>{status.label}</span></div>
@@ -229,9 +252,9 @@ function MyBooksPage() {
                     <span>{item.publisherName || item.editionName || item.isbn || 'Akshara edition'}</span>
                     <div className="my-book-progress"><i className={`bi ${item.orderStatus === 'DELIVERED' ? 'bi-check-circle-fill' : 'bi-box-seam'}`} /><div><strong>{status.detail}</strong><small>Order #{item.orderId}</small></div></div>
                     <div className="my-book-actions">
-                      {item.orderStatus === 'DELIVERED' && item.bookId && <button disabled={trackingKey === `book-${item.bookId}`} type="button" onClick={() => startReading('PURCHASED_BOOK', item.bookId, `book-${item.bookId}`)}>{trackingKey === `book-${item.bookId}` ? 'Adding…' : 'Start reading'}</button>}
-                      {item.bookId && <Link to={`/books/${item.bookId}`}>{item.orderStatus === 'DELIVERED' ? 'Open book page' : 'View book'} <i className="bi bi-arrow-right" /></Link>}
-                      <Link to={`/orders/${item.orderId}`}>Track order</Link>
+                      {item.orderStatus === 'DELIVERED' && item.bookId && <button className="my-book-primary-action" disabled={trackingKey === `book-${item.bookId}`} type="button" onClick={() => openReadingJourney('PURCHASED_BOOK', item.bookId, `book-${item.bookId}`, readingEntry)}><i className={`bi ${action.icon}`} /> {trackingKey === `book-${item.bookId}` ? 'Adding…' : action.label}</button>}
+                      {item.bookId && <Link className="my-book-secondary-action" to={`/books/${item.bookId}`}>{item.orderStatus === 'DELIVERED' ? 'Book details' : 'View book'} <i className="bi bi-arrow-up-right" /></Link>}
+                      <Link className="my-book-secondary-action" to={`/orders/${item.orderId}`}><i className="bi bi-box-seam" /> Track order</Link>
                     </div>
                   </div>
                 </article>

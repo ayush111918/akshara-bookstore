@@ -33,5 +33,16 @@ describe('Navbar account role', () => {
 
     expect(screen.queryByText('Admin')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Reader account: Demo Reader' })).toHaveAttribute('href', '/account')
+    expect(screen.getByRole('link', { name: 'My Books' })).toHaveAttribute('href', '/my-books')
+    expect(screen.getByRole('link', { name: 'Orders' })).toHaveAttribute('href', '/orders')
+  })
+
+  it('offers both sign in and registration to signed-out visitors', () => {
+    render(<MemoryRouter><Navbar /></MemoryRouter>)
+
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/login')
+    expect(screen.getByRole('link', { name: 'Join Akshara' })).toHaveAttribute('href', '/register')
+    expect(screen.queryByRole('link', { name: 'My Books' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Orders' })).not.toBeInTheDocument()
   })
 })

@@ -77,6 +77,23 @@
   font-size: 0.84rem;
 }
 
+.nav-auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nav-signin-link {
+  color: var(--forest);
+  font-size: 0.84rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.nav-signin-link:hover {
+  color: var(--clay);
+}
+
 .navbar-toggler {
   border: 0;
   box-shadow: none !important;

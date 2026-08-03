@@ -333,14 +333,43 @@
   display: flex;
   padding-top: 0.8rem;
   align-items: center;
-  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 0.7rem;
 }
 
-.my-book-actions a {
+.my-book-actions a,
+.my-book-actions button {
+  display: inline-flex;
+  min-height: 34px;
+  padding: 0.45rem 0.65rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  color: var(--forest);
   font-size: 0.73rem;
   font-weight: 850;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
   text-decoration: none;
+}
+
+.my-book-actions .my-book-primary-action {
+  color: var(--white);
+  background: var(--forest);
+  border-color: var(--forest);
+}
+
+.my-book-actions .my-book-primary-action:hover:not(:disabled) {
+  background: #0c3a31;
+}
+
+.my-book-actions .my-book-secondary-action {
+  border-color: var(--line);
+}
+
+.my-book-actions .my-book-secondary-action:hover {
+  background: var(--paper-deep);
 }
 
 .personal-book-actions {

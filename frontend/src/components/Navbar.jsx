@@ -15,7 +15,7 @@ function Navbar() {
   }
 
   return (
-    <nav className="navbar navbar-expand-lg akshara-navbar sticky-top">
+    <nav className="navbar navbar-expand-xl akshara-navbar sticky-top">
       <div className="container-xl">
         <Link
           className="navbar-brand akshara-brand"
@@ -64,6 +64,16 @@ function Navbar() {
                   {user?.role === 'READER' ? <Link className="nav-link" to="/reading-journey">Reading journey</Link> : <a className="nav-link" href="/#journey">Reading journey</a>}
                 </li>
                 <li className="nav-item"><Link className="nav-link" to="/community">Community</Link></li>
+                {user?.role === 'READER' && (
+                  <>
+                    <li className="nav-item">
+                      <Link className="nav-link reader-utility-link" to="/my-books"><i className="bi bi-journal-bookmark" /> My Books</Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link className="nav-link reader-utility-link" to="/orders"><i className="bi bi-receipt" /> Orders</Link>
+                    </li>
+                  </>
+                )}
                 <li className="nav-item">
                   <Link className="nav-icon-button nav-count-link" to="/wishlist" aria-label="Open wishlist">
                     <i className="bi bi-heart" />
@@ -94,7 +104,12 @@ function Navbar() {
                   </Link>
                   <button type="button" onClick={signOut}>Sign out</button>
                 </div>
-              ) : <Link className="btn btn-ink nav-join-button" to="/register">Join Akshara</Link>}
+              ) : (
+                <div className="nav-auth-actions">
+                  <Link className="nav-signin-link" to="/login">Sign in</Link>
+                  <Link className="btn btn-ink nav-join-button" to="/register">Join Akshara</Link>
+                </div>
+              )}
             </li>
           </ul>
         </div>
